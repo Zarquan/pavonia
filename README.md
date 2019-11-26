@@ -1,6 +1,6 @@
 # pavonia
-Integrating <a target="blank" href="https://rucio.cern.ch/">Rucio</a> with <a target="blank" href="http://ivoa.net/documents/VOSpace/">VOSpace</a>.
+Integrating <a href="https://rucio.cern.ch/">Rucio</a> with <a target="blank" href="http://ivoa.net/documents/VOSpace/">VOSpace</a>.
 
-Named after the <a target="blank" href="https://www.ukmoths.org.uk/species/saturnia-pavonia">_Saturnia Pavonia_</a> moth.
+Named after the <a href="https://www.ukmoths.org.uk/species/saturnia-pavonia">_Saturnia Pavonia_</a> moth.
 
 <a href="https://www.ukmoths.org.uk/species/saturnia-pavonia"><img src="https://www.ukmoths.org.uk/site/assets/files/13734/1643s_pavoniadw.450x0.jpg?nc=1540713259"/></a>
