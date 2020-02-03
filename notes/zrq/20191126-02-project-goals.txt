@@ -1,0 +1,127 @@
+#
+# <meta:header>
+#   <meta:licence>
+#     Copyright (c) 2019, ROE (http://www.roe.ac.uk/)
+#
+#     This information is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This information is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#   </meta:licence>
+# </meta:header>
+#
+#zrq-notes-indent
+#zrq-notes-ansible
+#
+
+
+    Integrate VOSpace and Rucio
+
+    Need a Rucio deployment to work with.
+        Find an Ansible or Helm deployment to use.
+        Install on [Eleanor|IRIS|...].
+
+    I understand what VOSpace does.
+    I don't understand much about the SSO standards.
+        Learn from Sara's work on SSO integration.
+
+    I don't understand much about Rucio.
+        Local deployment(s) to experiment with.
+
+
+    What I do know
+        Rucio is simlar to iRODs
+        Declarative system, describe what you want, the system figures out how.
+        Internally, Rucio uses FileTransferService to actually move the data.
+        This sounds like an equivalent level to VOSpace.
+
+    Initial guess
+
+        Integrate VOSpace as a component in Rucio.
+            Mapping the VOSpace space into Rucio space.
+            Transfer agent, equivalent to a FileTransferService.
+
+        Integrate Rucio as a component in VOSpace.
+            Mapping the Rucio space as a VOSpace node.
+            Translating the VOSpace transfers to Rucio rules.
+
+        To run a VOSpace we will need a registry.
+        RegistryInaBox - RiB
+            Based on Gregory's TAP service, HSQLDB or Derby, and some tweaks.
+
+
+    VOSpace client
+        Python client library, useable by other projects.
+            VOSpace client needs a Registry client ..
+                Registry client needs a TAP client ..
+        How much is already in pyvo/astropy ?
+            Not much at all.
+
+
+
+    Use case targets :
+
+        VOSpace|Rucio
+
+            Make data in VOSpace appear to be part of Rucio space.
+
+            Make data in Rucio appear to be part of VOSpace space.
+
+            Using a Rucio client:
+                Transfer something from [Rucio] into VOSpace at [Canada|Trieste|Edinburgh]
+                    Public access, no auth.
+                    Protected access, federated auth.
+
+                Transfer something from VOSpace at [Canada|Trieste|Edinburgh] into Rucio at [Edinburgh]
+                    Public access, no auth.
+                    Protected access, federated auth.
+
+            Using a VOSpace client:
+                Transfer something from [Rucio] into VOSpace at [Canada|Trieste|Edinburgh]
+                    Public access, no auth.
+                    Protected access, federated auth.
+
+                Transfer something from VOSpace at [Canada|Trieste|Edinburgh] into Rucio at [Edinburgh]
+                    Public access, no auth.
+                    Protected access, federated auth.
+
+
+        VOSpace|OneData
+
+            Make data in VOSpace appear to be part of EOSC-hub OneData space.
+
+            Make data in EOSC-hub OneData appear to be part of VOSpace space.
+
+            Using a OneData client:
+                Transfer something from [OneData] into VOSpace at [Canada|Trieste|Edinburgh]
+                    Public access, no auth.
+                    Protected access, federated auth.
+
+                Transfer something from VOSpace at [Canada|Trieste|Edinburgh] into OneData at [Edinburgh]
+                    Public access, no auth.
+                    Protected access, federated auth.
+
+            Using a VOSpace client:
+                Transfer something from [OneData] into VOSpace at [Canada|Trieste|Edinburgh]
+                    Public access, no auth.
+                    Protected access, federated auth.
+
+                Transfer something from VOSpace at [Canada|Trieste|Edinburgh] into Rucio at [Edinburgh]
+                    Public access, no auth.
+                    Protected access, federated auth.
+
+
+
+
+
+
+
+

@@ -1,0 +1,244 @@
+#
+# <meta:header>
+#   <meta:licence>
+#     Copyright (c) 2019, ROE (http://www.roe.ac.uk/)
+#
+#     This information is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This information is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#   </meta:licence>
+# </meta:header>
+#
+#zrq-notes-time
+#zrq-notes-indent
+#zrq-notes-ansible
+#zrq-notes-osformat
+#
+
+Task 4.1 - Integration of astronomy VO data and services into the EOSC
+
+Primary goal
+Integrating Rucio[1] with VOSpace [2].
+[1] https://rucio.cern.ch/
+[2] http://ivoa.net/documents/VOSpace/
+
+VOSpace:Rucio
+Two ways to do the integration, Rucio in VOSpace and VOSpace in Rucio.
+
+    Rucio in VOSpace
+    Integrate a 3rd party VOSpace service to be part of the space managed by a Rucio service.
+        Embed a VOSpace client into the Rucio service so the Rucio service can send commands to the VOSpace service.
+        Use a Rucio client interacting with the Rucio service to access data in the VOSpace space.
+
+            List the contents of the VOSpace space.
+            Create an object in the VOSpace space.
+            Delete an object in the VOSpace space.
+
+            Transfer data into the VOSpace space from another part of the Rucio space not in the VOSpace space.
+            Transfer data from the VOSpace space to another part of the Rucio space not in the VOSpace space.
+
+            Transfer data into the VOSpace space from an external location outside the Rucio space.
+            Transfer data from the VOSpace space to an external location outside the Rucio space.
+
+            Transfer data in the VOSpace space to another location in the VOSpace space.
+
+            Delete an object in the VOSpace space.
+
+    VOSpace in Rucio
+    Integrate a 3rd party Rucio service to be part of the space managed by a VOSpace service.
+        Embed a Rucio client into the VOSpace service so the VOSpace service can send commands to the Rucio service.
+        Use a VOSpace client interacting with a VOSpace service to access data in the Rucio space.
+
+            List the contents of the Rucio space.
+            Create an object in the Rucio space.
+            Delete an object in the Rucio space.
+
+            Transfer data into the Rucio space from another part of the VOSpace space not in the Rucio space.
+            Transfer data from the Rucio space to another part of the VOSpace space not in the Rucio space.
+
+            Transfer data into the Rucio space from an external location outside the VOSpace space.
+            Transfer data from the Rucio space to an external location outside the VOSpace space.
+
+            Transfer data in the Rucio space to another location in the Rucio space.
+
+            Delete an object in the Rucio space.
+
+
+VOSpace:OneData
+Two ways to do the integration, OneData in VOSpace and VOSpace in OneData.
+
+    OneData in VOSpace
+    Integrate a 3rd party VOSpace service to be part of the space managed by a OneData service.
+
+        Embed a VOSpace client into the OneData service so the OneData service can send commands to the VOSpace service.
+        Use a OneData client interacting with the OneData service to access data in the VOSpace space.
+
+            List the contents of the VOSpace space.
+            Create an object in the VOSpace space.
+            Delete an object in the VOSpace space.
+
+            Transfer data into the VOSpace space from another part of the OneData space not in the VOSpace space.
+            Transfer data from the VOSpace space to another part of the OneData space not in the VOSpace space.
+
+            Transfer data into the VOSpace space from an external location outside the OneData space.
+            Transfer data from the VOSpace space to an external location outside the OneData space.
+
+            Transfer data in the VOSpace space to another location in the VOSpace space.
+
+            Delete an object in the VOSpace space.
+
+    VOSpace in OneData
+    Integrate a 3rd party OneData service to be part of the space managed by a VOSpace service.
+        Embed a OneData client into the VOSpace service so the VOSpace service can send commands to the OneData service.
+        Use a VOSpace client interacting with a VOSpace service to access data in the OneData space.
+
+            List the contents of the OneData space.
+            Create an object in the OneData space.
+            Delete an object in the OneData space.
+
+            Transfer data into the OneData space from another part of the VOSpace space not in the OneData space.
+            Transfer data from the OneData space to another part of the VOSpace space not in the OneData space.
+
+            Transfer data into the OneData space from an external location outside the VOSpace space.
+            Transfer data from the OneData space to an external location outside the VOSpace space.
+
+            Transfer data in the OneData space to another location in the OneData space.
+
+            Delete an object in the OneData space.
+
+
+Three levels of identity integration
+
+    No integration:
+        Ignore all aspects of identity, authorisation and permissions.
+        Implement the mechanics of data transfers without looking at identity.
+        Use fixed or hard coded identities to avoid access controls.
+
+    Public access:
+        Enable identity, authorisation and permission checks to access public data.
+        Check data is public and access is allowed to all.
+        Prevent access to protected or private data.
+        Handle access control exceptions correctly.
+
+    Private access:
+        Enable identity, authorisation and permission checks to access private data.
+        Proagate identity across the barriers between services.
+        Check data ownership and access controls.
+        Allow access for the correct identity.
+        Prevent access for the wrong identity.
+        Handle access control exceptions correctly.
+
+Software components
+
+    Local VOSpace service.
+
+        VOSpace requires VORegistry service to resolve URIs.
+        VOSpace requires VOGroups service to resolve groups and permissions.
+        VORegistry requires TAP serive.
+
+        We need our own local implementations or deplyments of these services to work with.
+
+        Initial list of local service deployments we would need :
+
+                VOSpace in Docker container
+                VOGroups in Docker container
+                VORegistry in Docker container
+                TAP in Docker container
+
+                SSO x509 identity service in Docker container
+
+        We would package the services in Docker containers because that makes it easy for deployment during development and testing.
+        These containerised services match several aspects of the WP 4.1 plan (see below).
+
+        Extending the work by Gregory on his TAP service implementation
+        https://github.com/gmantele/vollt
+
+            1) Package the TAP service from Gregory with databases from the Cosmopterix project.
+
+            2) Add the additional webservice APIs needed for Registry.
+                2.1) OAI-PMH for publishing
+                    http://www.ivoa.net/documents/RegistryInterface/20180723/REC-RegistryInterface-1.1.pdf#section.2
+                2.2) Management API for registering services.
+                    POST registration details and a URL for the VOSI endpoint
+
+        Identity services
+            Re-implement AstroGrid community service to issue delegated x509 certificates.
+            Implement local OAuth service for development and testing.
+
+        If we are planning to implement VOSpace in Java, then we need a Rucio client in Java.
+            It looks like all the Rucio client libraries are Python based.
+            Documenttation for the Rucio REST API looks consistent and well structured.
+                https://rucio.readthedocs.io/en/latest/rest.html
+            It should be fairly easy to develop a Java client using standard tools.
+            To start with we only need to implement the methods as we need them
+
+
+    Local Rucio service
+
+        Docker based dev system
+        https://github.com/rucio/rucio/tree/master/etc/docker/dev
+
+        Rucio is written in Python.
+        Adding VO client libraries to Rucio requires Python client libraries for the VO services.
+
+            AstroQuery has a TAP client from Gaia
+            Gavo has a TAP client
+
+            We will probably need to implement some clients ourselves, particularly if we want
+            to tweak the auth and auth identities used.
+
+                Python VORegistry client
+                Python VOGroups client
+                Python VOSpace client
+
+            We need to learn how the Rucio components work together.
+            Looks like the Rucio user account model could match well with the IVOA account and group concepts.
+
+
+    Work plan task deliverables
+
+        The containerised services we are planning on developing match the containerised services in task 4.1.d.
+
+            4.1.d "Identify existing VO services or tools to serve as test-cases for containerization."
+
+                VOSpace in Docker container
+                VOGroups in Docker container
+                VORegistry in Docker container
+                TAP in Docker container
+
+                SSO x509 identity service in Docker container
+
+        Using these containers to build a Software as a Service deployment of VO services would match parts of task 4.1.b
+
+            4.1.b "Assess the methods for contributing VO services as an Astronomy Portfolio to the EOSC Marketplace."
+                  "Analyse the possibilities for operating a customized marketplace for astronomical VO services."
+
+            Software as a Service deployment of VO services
+                - Create a VORegsitry for my ID
+                - Create a VOSpace with xx of space (and register in my VORegsitry)
+                - Create a TAP service with xx of space (and register in my VORegsitry)
+
+        If the EOSC system is planning on using Rucio for the WP2 DataLake, then integrating VOSpace and Rucio matches task 4.1.c
+
+            4.1.d "Test the harmonisation of the above mechanisms with the design and implementation of a “data lake” (in coordination with WP2)."
+
+        Summary of task components related to this work:
+
+            4.1.b "Assess the methods for contributing VO services as an Astronomy Portfolio to the EOSC Marketplace."
+                  "Analyse the possibilities for operating a customized marketplace for astronomical VO services."
+
+            4.1.c "Assess the possible implementation of existing VO standards for data sharing (VOSpace) within the EOSC services."
+
+            4.1.d "Identify existing VO services or tools to serve as test-cases for containerization."
+            4.1.d "Test the harmonisation of the above mechanisms with the design and implementation of a “data lake” (in coordination with WP2)."
+
+
