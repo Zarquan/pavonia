@@ -1,0 +1,432 @@
+#
+# <meta:header>
+#   <meta:licence>
+#     Copyright (c) 2021, ROE (http://www.roe.ac.uk/)
+#
+#     This information is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This information is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#   </meta:licence>
+# </meta:header>
+#
+#zrq-notes-time
+#zrq-notes-indent
+#zrq-notes-crypto
+#zrq-notes-ansible
+#zrq-notes-osformat
+#zrq-notes-zeppelin
+#
+
+    Local deployment of Rucio in Docker containers.
+    Setting up a Rucio development environment:
+    https://github.com/rucio/rucio/tree/master/etc/docker/dev
+
+    Using Podman rather than Docker.
+    https://github.com/containers/podman-compose
+
+    Podman compose
+    https://fedoramagazine.org/manage-containers-with-podman-compose/
+
+    Podman compose
+    https://github.com/containers/podman-compose
+
+    Podman network
+    https://podman.io/getting-started/network
+
+    Configuring container networking with Podman
+    https://www.redhat.com/sysadmin/container-networking-podman
+
+
+# -----------------------------------------------------
+# Clone our fork of the Rucio code base.
+#[user@desktop]
+
+    cat > "${HOME:?}/rucio.env" << 'EOF'
+source "${HOME:?}/projects.env"
+RUCIO_REPO='git@github.com:Zarquan/rucio.git'
+RUCIO_HOME="${PROJECTS_ROOT:?}/local/rucio"
+RUCIO_CODE="${RUCIO_HOME:?}/github-zrq"
+EOF
+
+    source "${HOME:?}/rucio.env"
+    mkdir "$(dirname ${RUCIO_CODE:?})"
+    pushd "$(dirname ${RUCIO_CODE:?})"
+
+        git clone "${RUCIO_REPO:?}" "$(basename ${RUCIO_CODE:?})"
+
+    popd
+
+
+# -----------------------------------------------------
+# Install podman-compose
+#[user@desktop]
+
+    sudo pip3 install podman-compose
+
+    >   Requirement already satisfied: podman-compose in /usr/lib/python3.8/site-packages (0.1.6.dev0)
+    >   Requirement already satisfied: pyyaml in /usr/lib64/python3.8/site-packages (from podman-compose) (5.4.1)
+
+
+# -----------------------------------------------------
+# Run the basic system.
+#[user@desktop]
+
+    source "${HOME:?}/rucio.env"
+    pushd "${RUCIO_CODE:?}"
+
+        podman-compose \
+            --file etc/docker/dev/docker-compose.yml \
+            up -d
+
+    popd
+
+    >   podman pod create --name=dev --share net -p 5432:5432 -p 8443:443 -p 8080:80
+    >   ....
+    >   ....
+    >   podman run --name=dev_rucio_1 -d --pod=dev --label io.podman.compose.config-hash=123 ....
+    >   ....
+    >   ....
+    >   podman run --name=dev_ruciodb_1 -d --pod=dev --label io.podman.compose.config-hash=123 ....
+    >   ....
+    >   ....
+    >   podman run --name=dev_graphite_1 -d --pod=dev --label io.podman.compose.config-hash=123 ...
+    >   ....
+    >   ....
+
+
+    podman ps
+
+    >   CONTAINER ID  IMAGE                                         COMMAND               CREATED         STATUS            PORTS                                                                NAMES
+    >   4a55fb375f0b  docker.io/graphiteapp/graphite-statsd:latest                        2 minutes ago   Up 2 minutes ago                                                                       dev_graphite_1
+    >   11503bddcd8e  docker.io/library/postgres:11                 -c fsync=off -c s...  5 minutes ago   Up 5 minutes ago                                                                       dev_ruciodb_1
+    >   2e529fd6832a  docker.io/rucio/rucio-dev:py3                 httpd -D FOREGROU...  6 minutes ago   Up 6 minutes ago  0.0.0.0:8080->80/tcp, 0.0.0.0:8443->443/tcp, 0.0.0.0:5432->5432/tcp  dev_rucio_1
+    >   fcbe62758aef  k8s.gcr.io/pause:3.2                                                11 minutes ago  Up 6 minutes ago  0.0.0.0:8080->80/tcp, 0.0.0.0:8443->443/tcp, 0.0.0.0:5432->5432/tcp  d5c784794368-infra
+
+
+# -----------------------------------------------------
+# Login to the Rucio container.
+#[user@desktop]
+
+    podman exec -it dev_rucio_1 /bin/bash
+
+        tools/run_tests_docker.sh
+
+    >   Clearing memcache
+    >   Graceful restart of Apache
+    >   [Wed Mar 31 02:45:28.701945 2021] [proxy:info] [pid 1143:tid 140494259771520] AH01145: Sharing worker 'https://localhost' instead of creating new worker 'https://localhost'
+    >   AH00558: httpd: Could not reliably determine the server's fully qualified domain name, using 127.0.1.1. Set the 'ServerName' directive globally to suppress this message
+    >   Cleaning old authentication tokens
+    >   Cleaning local RSE directories
+    >   Removing old SQLite databases
+    >   Using the standard config
+    >   Resetting database tables
+    >   Cannot destroy schema -- assuming already gone, continuing: (psycopg2.OperationalError) could not connect to server: Connection refused
+    >   	Is the server running on host "ruciodb" (127.0.0.1) and accepting
+    >   	TCP/IP connections on port 5432?
+    >   could not connect to server: Connection refused
+    >   	Is the server running on host "ruciodb" (127.0.0.1) and accepting
+    >   	TCP/IP connections on port 5432?
+    >   ....
+    >   ....
+
+
+    #
+    # 2hrs of Google foo ....
+    # Change the network settings in the compose file.
+    #
+
+# -----------------------------------------------------
+# Create a Podman compose file.
+#[user@desktop]
+
+    source "${HOME:?}/rucio.env"
+    pushd "${RUCIO_CODE:?}"
+
+        diff etc/docker/dev/docker-compose.yml \
+             etc/docker/dev/podman-compose.yml
+
+    popd
+
+    >   6a7,8
+    >   >     networks:
+    >   >       - rucionet
+    >   21c23,24
+    >   <     network_mode: "service:rucio"
+    >   ---
+    >   >     networks:
+    >   >       - rucionet
+    >   29c32,35
+    >   <     network_mode: "service:rucio"
+    >   ---
+    >   >     networks:
+    >   >       - rucionet
+    >   > networks:
+    >   >   rucionet: {}
+
+        #
+        # We could apply patch changes to the existing docker-compose files,
+        # or provide a separate set of podman-compose files.
+        #
+        # Depends on how many changes are needed going forward ..
+        #
+
+
+# -----------------------------------------------------
+# Run the basic system.
+#[user@desktop]
+
+    source "${HOME:?}/rucio.env"
+    pushd "${RUCIO_CODE:?}"
+
+        podman-compose \
+            --file etc/docker/dev/podman-compose.yml \
+            up -d
+
+    popd
+
+
+    >   podman pod create --name=dev --share net -p 8080:80 -p 8443:443 -p 5432:5432
+    >   ....
+    >   ....
+    >   podman run --name=dev_rucio_1 -d --pod=dev --label io.podman.compose.config-hash=123 ....
+    >   ....
+    >   ....
+    >   podman run --name=dev_ruciodb_1 -d --pod=dev --label io.podman.compose.config-hash=123 ....
+    >   ....
+    >   ....
+    >   podman run --name=dev_graphite_1 -d --pod=dev --label io.podman.compose.config-hash=123 ....
+    >   ....
+    >   ....
+
+
+# -----------------------------------------------------
+# List the active pods.
+#[user@desktop]
+
+    podman pod ps
+
+    >   POD ID        NAME    STATUS   CREATED         INFRA ID      # OF CONTAINERS
+    >   97577196d43b  dev     Running  29 seconds ago  a253218a6dcb  4
+
+    podman ps
+
+    >   CONTAINER ID  IMAGE                                  COMMAND               CREATED             STATUS             PORTS                                                                NAMES
+    >   ffbdd780daef  docker.io/graphiteapp/graphite-statsd                        54 seconds ago      Up 51 seconds ago  0.0.0.0:8080->80/tcp, 0.0.0.0:8443->443/tcp, 0.0.0.0:5432->5432/tcp  dev_graphite_1
+    >   6570ef22e2d7  docker.io/postgres:11                  -c fsync=off -c s...  56 seconds ago      Up 56 seconds ago  0.0.0.0:8080->80/tcp, 0.0.0.0:8443->443/tcp, 0.0.0.0:5432->5432/tcp  dev_ruciodb_1
+    >   781a0a7145db  docker.io/rucio/rucio-dev:py3          httpd -D FOREGROU...  58 seconds ago      Up 57 seconds ago  0.0.0.0:8080->80/tcp, 0.0.0.0:8443->443/tcp, 0.0.0.0:5432->5432/tcp  dev_rucio_1
+    >   a253218a6dcb  k8s.gcr.io/pause:3.2                                         About a minute ago  Up 58 seconds ago  0.0.0.0:8080->80/tcp, 0.0.0.0:8443->443/tcp, 0.0.0.0:5432->5432/tcp  97577196d43b-infra
+
+
+# -----------------------------------------------------
+# Test the web server.
+#[user@desktop]
+
+    curl --head http://localhost:8080/
+
+    >   HTTP/1.1 200 OK
+    >   Server: nginx/1.18.0
+    >   Date: Wed, 31 Mar 2021 04:50:50 GMT
+    >   Content-Type: text/html; charset=utf-8
+    >   Content-Length: 963
+    >   Connection: keep-alive
+    >   Vary: Accept-Encoding
+    >   Access-Control-Allow-Origin: *
+    >   Access-Control-Allow-Methods: GET, POST, OPTIONS
+    >   Access-Control-Allow-Headers: Authorization, Content-Type
+    >   Access-Control-Allow-Credentials: true
+
+
+# -----------------------------------------------------
+# Connect into the Rucio container and run the tests.
+#[user@desktop]
+
+    podman exec -it dev_rucio_1 /bin/bash
+
+
+        tools/run_tests_docker.sh
+
+
+    >   ....
+    >   ....
+    >   ========================================================================================================== short test summary info ==========================================================================================================
+    >   XFAIL test_download.py::test_download_from_archive_on_xrd
+    >     XRD1 must be initialized https://github.com/rucio/rucio/pull/4165/
+    >   XFAIL test_replica_sorting.py::test_sort_geoip_wan[application/x-json-stream]
+    >     see https://github.com/rucio/rucio/issues/4105
+    >   XFAIL test_replica_sorting.py::test_sort_geoip_lan_before_wan[mime='application/x-json-stream', lan-site='APERTURE']
+    >     see https://github.com/rucio/rucio/issues/4105
+    >   XFAIL test_replica_sorting.py::test_sort_geoip_lan_before_wan[mime='application/x-json-stream', lan-site='BLACKMESA']
+    >     see https://github.com/rucio/rucio/issues/4105
+    >   XFAIL test_replica_sorting.py::test_sort_geoip_address_not_found_error[application/x-json-stream]
+    >     see https://github.com/rucio/rucio/issues/4105
+    >   XFAIL test_authentication.py::test_saml_fail
+    >     The WebUI isn't linked to CERN SSO yet so this needs to be fixed once it is linked
+    >   XFAIL test_authentication.py::test_saml_success
+    >     The WebUI isn't linked to CERN SSO yet so this needs to be fixed once it is linked
+    >   XFAIL test_auditor_hdfs.py::TestReplicaFromHDFS::test_replica_from_hdfs_download_merges_the_file_parts_in_order
+    >   XFAIL test_auditor.py::test_auditor_check_survives_failures_and_queues_failed_rses
+    >     reason: [NOTRUN] loops endlessly sometimes
+    >   XFAIL test_auditor_hdfs.py::TestReplicaFromHDFS::test_replica_from_hdfs_download_reads_files_bigger_than_buffer_size
+    >   XFAIL test_dirac.py::TestDiracClients::test_add_files
+    >     fails with: RSE does not exist
+    >   XPASS test_preparer.py::test_two_sources_one_destination fails when run in parallel
+    >   ============================================================================= 784 passed, 310 skipped, 11 xfailed, 1 xpassed, 18 warnings in 528.76s (0:08:48) ==============================================================================
+    >   [root@2348d107c79a rucio]#
+
+
+# -----------------------------------------------------
+# Stop and remove the dev Pod.
+#[user@desktop]
+
+    podman pod ps
+
+    >   POD ID        NAME    STATUS   CREATED         INFRA ID      # OF CONTAINERS
+    >   97577196d43b  dev     Running  12 minutes ago  a253218a6dcb  4
+
+
+    podman pod ps -q
+
+    >   97577196d43b542238d78d37e34f53034b00c7689b9dbe5bf1d6a34049a5c6ce
+
+
+    for podid in $(podman pod ps -q)
+    do
+        podman pod rm -f "${podid}"
+    done
+
+    >   97577196d43b542238d78d37e34f53034b00c7689b9dbe5bf1d6a34049a5c6ce
+
+
+# -----------------------------------------------------
+# Create a Podman compose file.
+#[user@desktop]
+
+    source "${HOME:?}/rucio.env"
+    pushd "${RUCIO_CODE:?}"
+
+        diff etc/docker/dev/docker-compose-storage.yml \
+             etc/docker/dev/podman-compose-storage.yml
+
+    popd
+
+    >   34c34,35
+    >   <     network_mode: "service:rucio"
+    >   ---
+    >   >     networks:
+    >   >       - rucionet
+    >   42c43,44
+    >   <     network_mode: "service:rucio"
+    >   ---
+    >   >     networks:
+    >   >       - rucionet
+    >   45c47,48
+    >   <     network_mode: "service:rucio"
+    >   ---
+    >   >     networks:
+    >   >       - rucionet
+    >   48c51,52
+    >   <     network_mode: "service:rucio"
+    >   ---
+    >   >     networks:
+    >   >       - rucionet
+    >   56c60,61
+    >   <     network_mode: "service:rucio"
+    >   ---
+    >   >     networks:
+    >   >       - rucionet
+    >   64c69,70
+    >   <     network_mode: "service:rucio"
+    >   ---
+    >   >     networks:
+    >   >       - rucionet
+    >   72c78,79
+    >   <     network_mode: "service:rucio"
+    >   ---
+    >   >     networks:
+    >   >       - rucionet
+    >   80c87,88
+    >   <     network_mode: "service:rucio"
+    >   ---
+    >   >     networks:
+    >   >       - rucionet
+    >   87a96,97
+    >   > networks:
+    >   >   rucionet: {}
+
+
+# -----------------------------------------------------
+# Run the storage system.
+#[user@desktop]
+
+    source "${HOME:?}/rucio.env"
+    pushd "${RUCIO_CODE:?}"
+
+        podman-compose \
+            --project-name rucio-dev \
+            --file etc/docker/dev/podman-compose-storage.yml \
+            up --detach
+
+    popd
+
+    >   podman pod create --name=rucio-storage ...
+    >   ....
+    >   ....
+    >   podman run --name=rucio-storage_rucio_1 -d --pod=rucio-storage ....
+    >   ....
+    >   ....
+    >   podman run --name=rucio-storage_ruciodb_1 -d --pod=rucio-storage ....
+    >   ....
+    >   ....
+    >   podman run --name=rucio-storage_graphite_1 -d --pod=rucio-storage ....
+    >   ....
+    >   ....
+    >   podman run --name=rucio-storage_fts_1 -d --pod=rucio-storage ....
+    >   ....
+    >   ....
+    >   podman run --name=rucio-storage_ftsdb_1 -d --pod=rucio-storage ....
+    >   ....
+    >   ....
+    >   podman run --name=rucio-storage_xrd1_1 -d --pod=rucio-storage ....
+    >   ....
+    >   ....
+    >   podman run --name=rucio-storage_xrd2_1 -d --pod=rucio-storage ....
+    >   ....
+    >   ....
+    >   podman run --name=rucio-storage_xrd3_1 -d --pod=rucio-storage ....
+    >   ....
+    >   ....
+    >   podman run --name=rucio-storage_minio_1 -d --pod=rucio-storage ....
+    >   ....
+    >   ....
+
+
+    podman pod ps
+
+    >   POD ID        NAME           STATUS   CREATED         INFRA ID      # OF CONTAINERS
+    >   925e4b9ce736  rucio-storage  Running  18 minutes ago  ed9f3e9243b8  10
+
+
+    podman ps
+
+    >   CONTAINER ID  IMAGE                                  COMMAND               CREATED         STATUS             PORTS  NAMES
+    >   ab7d4a71d923  docker.io/minio/minio:latest           server /data          10 minutes ago  Up 10 minutes ago  ....   rucio-storage_minio_1
+    >   d5bbfd42b105  docker.io/rucio/xrootd                                       11 minutes ago  Up 11 minutes ago  ....   rucio-storage_xrd3_1
+    >   23e648d6244f  docker.io/rucio/xrootd                                       11 minutes ago  Up 11 minutes ago  ....   rucio-storage_xrd2_1
+    >   fd123c9792e7  docker.io/rucio/xrootd:latest                                11 minutes ago  Up 11 minutes ago  ....   rucio-storage_xrd1_1
+    >   8e62c04da69b  docker.io/library/mysql:5              mysqld                13 minutes ago  Up 13 minutes ago  ....   rucio-storage_ftsdb_1
+    >   f0f1d8d709db  docker.io/rucio/fts:latest                                   15 minutes ago  Up 15 minutes ago  ....   rucio-storage_fts_1
+    >   bb6a5bbbb482  docker.io/graphiteapp/graphite-statsd                        18 minutes ago  Up 18 minutes ago  ....   rucio-storage_graphite_1
+    >   98f21083525b  docker.io/postgres:11                  -c fsync=off -c s...  18 minutes ago  Up 18 minutes ago  ....   rucio-storage_ruciodb_1
+    >   2044ff31ee6c  docker.io/rucio/rucio-dev:py3          httpd -D FOREGROU...  18 minutes ago  Up 18 minutes ago  ....   rucio-storage_rucio_1
+    >   ed9f3e9243b8  k8s.gcr.io/pause:3.2                                         18 minutes ago  Up 18 minutes ago  ....   925e4b9ce736-infra
+
+

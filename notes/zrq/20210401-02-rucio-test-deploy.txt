@@ -1,0 +1,257 @@
+#
+# <meta:header>
+#   <meta:licence>
+#     Copyright (c) 2021, ROE (http://www.roe.ac.uk/)
+#
+#     This information is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This information is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#   </meta:licence>
+# </meta:header>
+#
+#zrq-notes-time
+#zrq-notes-indent
+#zrq-notes-crypto
+#zrq-notes-ansible
+#zrq-notes-osformat
+#zrq-notes-zeppelin
+#
+
+    Local deployment of Rucio in Docker containers.
+    Setting up a Rucio development environment:
+    https://github.com/rucio/rucio/tree/master/etc/docker/dev
+
+    Names:
+
+        Raminiara
+        Abarris
+        Woodsievous
+        Neohill
+        Cheruton
+        Caprighes
+        Elligatia
+        Alimane
+
+
+# -----------------------------------------------------
+# Create a Podman compose file.
+#[user@desktop]
+
+    source "${HOME:?}/rucio.env"
+    pushd "${RUCIO_CODE:?}"
+
+        diff etc/docker/dev/docker-compose-storage.yml \
+             etc/docker/dev/podman-compose-storage.yml
+
+    popd
+
+
+    >   34c34,35
+    >   <     network_mode: "service:rucio"
+    >   ---
+    >   >     networks:
+    >   >       - rucionet
+    >   42c43,44
+    >   <     network_mode: "service:rucio"
+    >   ---
+    >   >     networks:
+    >   >       - rucionet
+    >   45c47,48
+    >   <     network_mode: "service:rucio"
+    >   ---
+    >   >     networks:
+    >   >       - rucionet
+    >   48c51,52
+    >   <     network_mode: "service:rucio"
+    >   ---
+    >   >     networks:
+    >   >       - rucionet
+    >   56c60,61
+    >   <     network_mode: "service:rucio"
+    >   ---
+    >   >     networks:
+    >   >       - rucionet
+    >   64c69,70
+    >   <     network_mode: "service:rucio"
+    >   ---
+    >   >     networks:
+    >   >       - rucionet
+    >   72c78,79
+    >   <     network_mode: "service:rucio"
+    >   ---
+    >   >     networks:
+    >   >       - rucionet
+    >   80c87,88
+    >   <     network_mode: "service:rucio"
+    >   ---
+    >   >     networks:
+    >   >       - rucionet
+    >   87a96,97
+    >   > networks:
+    >   >   rucionet: {}
+
+
+# -----------------------------------------------------
+# Run the storage system.
+#[user@desktop]
+
+    source "${HOME:?}/rucio.env"
+    pushd "${RUCIO_CODE:?}"
+
+        podman-compose \
+            --project-name Raminiara \
+            --file etc/docker/dev/podman-compose-storage.yml \
+            up --detach
+
+    popd
+
+
+    podman pod ps
+
+    >   POD ID        NAME       STATUS   CREATED         INFRA ID      # OF CONTAINERS
+    >   d5774a024b46  Raminiara  Running  23 seconds ago  804b36bc4863  10
+
+
+    podman ps
+
+    >   CONTAINER ID  IMAGE                                  COMMAND               CREATED         STATUS             PORTS                                                                                                                                                                                                  NAMES
+    >   31bc8bcccfb0  docker.io/minio/minio                  server /data          18 seconds ago  Up 17 seconds ago  0.0.0.0:8080->80/tcp ....  Raminiara_minio_1
+    >   d87c43924fdc  docker.io/rucio/xrootd                                       19 seconds ago  Up 19 seconds ago  0.0.0.0:8080->80/tcp ....  Raminiara_xrd3_1
+    >   d20dc0d5c35f  docker.io/rucio/xrootd                                       21 seconds ago  Up 21 seconds ago  0.0.0.0:8080->80/tcp ....  Raminiara_xrd2_1
+    >   e77ddb937675  docker.io/rucio/xrootd                                       23 seconds ago  Up 22 seconds ago  0.0.0.0:8080->80/tcp ....  Raminiara_xrd1_1
+    >   e4abe034c1bf  docker.io/mysql:5                      mysqld                25 seconds ago  Up 24 seconds ago  0.0.0.0:8080->80/tcp ....  Raminiara_ftsdb_1
+    >   1f7ed52e5f4f  docker.io/rucio/fts                                          27 seconds ago  Up 26 seconds ago  0.0.0.0:8080->80/tcp ....  Raminiara_fts_1
+    >   f85b368fc045  docker.io/graphiteapp/graphite-statsd                        31 seconds ago  Up 28 seconds ago  0.0.0.0:8080->80/tcp ....  Raminiara_graphite_1
+    >   7c4d1be4e2e4  docker.io/postgres:11                  -c fsync=off -c s...  33 seconds ago  Up 32 seconds ago  0.0.0.0:8080->80/tcp ....  Raminiara_ruciodb_1
+    >   08e0addf3045  docker.io/rucio/rucio-dev:py3          httpd -D FOREGROU...  35 seconds ago  Up 34 seconds ago  0.0.0.0:8080->80/tcp ....  Raminiara_rucio_1
+    >   804b36bc4863  k8s.gcr.io/pause:3.2                                         36 seconds ago  Up 34 seconds ago  0.0.0.0:8080->80/tcp ....  d5774a024b46-infra
+
+
+# -----------------------------------------------------
+# Watch the Rucio server logs.
+#[user@desktop]
+
+    podman exec -it Raminiara_rucio_1 /bin/bash
+
+        logshow
+
+    >   Thu Apr 01 13:10:24.680939 2021] [wsgi:info] [pid 4:tid 140179752577152] mod_wsgi (pid=4, process='rucio', application='rucio'): Loading Python script file '/opt/rucio/lib/rucio/web/rest/rule.py'.
+    >   [Thu Apr 01 13:10:24.686585 2021] [wsgi:info] [pid 4:tid 140179752577152] mod_wsgi (pid=4, process='rucio', application='rucio'): Loading Python script file '/opt/rucio/lib/rucio/web/rest/scope.py'.
+    >   [Thu Apr 01 13:10:24.687807 2021] [wsgi:info] [pid 4:tid 140179752577152] mod_wsgi (pid=4, process='rucio', application='rucio'): Loading Python script file '/opt/rucio/lib/rucio/web/rest/subscription.py'.
+    >   [Thu Apr 01 13:10:24.693147 2021] [wsgi:info] [pid 4:tid 140179752577152] mod_wsgi (pid=4, process='rucio', application='rucio'): Loading Python script file '/opt/rucio/lib/rucio/web/rest/temporary_did.py'.
+    >   [Thu Apr 01 13:10:24.694709 2021] [wsgi:info] [pid 4:tid 140179752577152] mod_wsgi (pid=4, process='rucio', application='rucio'): Loading Python script file '/opt/rucio/lib/rucio/web/rest/trace.py'.
+    >   [Thu Apr 01 13:10:24.709954 2021] [wsgi:info] [pid 4:tid 140179752577152] mod_wsgi (pid=4, process='rucio', application='rucio'): Loading Python script file '/opt/rucio/lib/rucio/web/ui/main.py'.
+    >   [Thu Apr 01 13:10:24.736866 2021] [wsgi:debug] [pid 4:tid 140179062945536] src/server/mod_wsgi.c(9118): mod_wsgi (pid=4): Started thread 1 in daemon process 'rucio'.
+    >   [Thu Apr 01 13:10:24.736904 2021] [wsgi:debug] [pid 4:tid 140179054552832] src/server/mod_wsgi.c(9118): mod_wsgi (pid=4): Started thread 2 in daemon process 'rucio'.
+    >   [Thu Apr 01 13:10:24.736921 2021] [wsgi:debug] [pid 4:tid 140179046160128] src/server/mod_wsgi.c(9118): mod_wsgi (pid=4): Started thread 3 in daemon process 'rucio'.
+    >   [Thu Apr 01 13:10:24.738346 2021] [wsgi:debug] [pid 4:tid 140179298875136] src/server/mod_wsgi.c(9118): mod_wsgi (pid=4): Started thread 0 in daemon process 'rucio'.
+    >   ....
+    >   ....
+
+
+# -----------------------------------------------------
+# Setup the test data set.
+#[user@desktop]
+
+    podman exec -it Raminiara_rucio_1 /bin/bash
+
+        tools/run_tests_docker.sh -ir
+
+    >   Clearing memcache
+    >   tools/run_tests_docker.sh: connect: Connection refused
+    >   tools/run_tests_docker.sh: line 59: /dev/tcp/127.0.0.1/11211: Connection refused
+    >   Graceful restart of Apache
+    >   [Thu Apr 01 13:15:53.336537 2021] [proxy:info] [pid 577:tid 140514674129024] AH01145: Sharing worker 'https://localhost' instead of creating new worker 'https://localhost'
+    >   AH00558: httpd: Could not reliably determine the server's fully qualified domain name, using 127.0.1.1. Set the 'ServerName' directive globally to suppress this message
+    >   Cleaning old authentication tokens
+    >   Cleaning local RSE directories
+    >   Removing old SQLite databases
+    >   Using the standard config
+    >   Resetting database tables
+    >   Schema set in config, trying to create schema: dev
+    >   INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+    >   INFO  [alembic.runtime.migration] Will assume transactional DDL.
+    >   INFO  [alembic.runtime.migration] Running stamp_revision  -> f85a2962b021
+    >   Running full alembic migration
+    >   Downgrading the DB to base
+    >   INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+    >   INFO  [alembic.runtime.migration] Will assume transactional DDL.
+    >   INFO  [alembic.runtime.migration] Running downgrade f85a2962b021 -> d23453595260, adding transfertool column and index to requests table
+    >   INFO  [alembic.runtime.migration] Running downgrade d23453595260 -> 8ea9122275b1, Add PREPARING state to Request model.
+    >   ....
+    >   ....
+    >   INFO  [alembic.runtime.migration] Running upgrade 50280c53117c -> 8ea9122275b1, Adding missing function based indices
+    >   INFO  [alembic.runtime.migration] Running upgrade 8ea9122275b1 -> d23453595260, Add PREPARING state to Request model.
+    >   Check if is_old_db function is returning true before the full upgrade
+    >   Upgrading the DB to head
+    >   INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+    >   INFO  [alembic.runtime.migration] Will assume transactional DDL.
+    >   INFO  [alembic.runtime.migration] Running upgrade d23453595260 -> f85a2962b021, adding transfertool column and index to requests table
+    >   Check if is_old_db function returns false after the full upgrade
+    >   Bootstrapping tests
+    >   Sync rse_repository
+    >   Sync metadata keys
+    >   Activating default RSEs (XRD1, XRD2, XRD3)
+    >   Added new deterministic RSE: XRD1
+    >   Added new deterministic RSE: XRD2
+    >   Added new deterministic RSE: XRD3
+    >   Added new RSE attribute for XRD1: test_container_xrd-True
+    >   Added new RSE attribute for XRD2: test_container_xrd-True
+    >   Added new RSE attribute for XRD3: test_container_xrd-True
+    >   210401 13:16:39 1200 cryptossl_X509CreateProxy: Your identity: /CN=Rucio User
+    >   xrd1:1094
+    >   
+    >   xrd2:1095
+    >   
+    >   xrd3:1096
+    >   
+    >   Added new RSE attribute for XRD1: fts-https://fts:8446
+    >   Added new RSE attribute for XRD2: fts-https://fts:8446
+    >   Added new RSE attribute for XRD3: fts-https://fts:8446
+    >   Set distance from XRD1 to XRD2 to 1 with ranking 1
+    >   Set distance from XRD1 to XRD3 to 1 with ranking 1
+    >   Set distance from XRD2 to XRD1 to 1 with ranking 1
+    >   Set distance from XRD2 to XRD3 to 1 with ranking 1
+    >   Set distance from XRD3 to XRD1 to 1 with ranking 1
+    >   Set distance from XRD3 to XRD2 to 1 with ranking 1
+    >   Set account limit for account root on RSE XRD1: -1.000 B
+    >   Set account limit for account root on RSE XRD2: -1.000 B
+    >   Set account limit for account root on RSE XRD3: -1.000 B
+    >   Added new scope to account: test-root
+    >     File "/usr/bin/fts-rest-delegate", line 12
+    >       except Exception, e:
+    >                       ^
+    >   SyntaxError: invalid syntax
+    >   1+0 records in
+    >   1+0 records out
+    >   10485760 bytes (10 MB) copied, 0.0931887 s, 113 MB/s
+    >   1+0 records in
+    >   1+0 records out
+    >   10485760 bytes (10 MB) copied, 0.0673757 s, 156 MB/s
+    >   1+0 records in
+    >   1+0 records out
+    >   10485760 bytes (10 MB) copied, 0.0696912 s, 150 MB/s
+    >   1+0 records in
+    >   1+0 records out
+    >   10485760 bytes (10 MB) copied, 0.0694333 s, 151 MB/s
+    >   Added test:dataset1
+    >   DIDs successfully attached to test:dataset1
+    >   Added test:dataset2
+    >   DIDs successfully attached to test:dataset2
+    >   Added test:container
+    >   DIDs successfully attached to test:container
+    >   6c6ffd8123604c7a9a0626c33dcba1c7
+    >   Added test:dataset3
+    >   DIDs successfully attached to test:dataset3
+
+
+

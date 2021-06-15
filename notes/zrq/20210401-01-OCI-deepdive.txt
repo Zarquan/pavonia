@@ -1,0 +1,89 @@
+#
+# <meta:header>
+#   <meta:licence>
+#     Copyright (c) 2021, ROE (http://www.roe.ac.uk/)
+#
+#     This information is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This information is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#   </meta:licence>
+# </meta:header>
+#
+#zrq-notes-time
+#zrq-notes-indent
+#zrq-notes-crypto
+#zrq-notes-ansible
+#zrq-notes-osformat
+#zrq-notes-zeppelin
+#
+
+    ----
+
+    Dockerless part-1 which tools to replace docker
+    https://mkdev.me/en/posts/dockerless-part-1-which-tools-to-replace-docker-with-and-why
+
+    Dockerless, part 2: How to build container image for Rails application without Docker and Dockerfile
+    https://mkdev.me/en/posts/dockerless-part-2-how-to-build-container-image-for-rails-application-without-docker-and-dockerfile
+
+    Dockerless, Part 3: Moving Development Environment to Containers with Podman
+    https://dzone.com/articles/dockerless-part-3-moving-development-environment-t
+
+    The tool that really runs your containers: deep dive into runc and OCI specifications
+    https://mkdev.me/en/posts/the-tool-that-really-runs-your-containers-deep-dive-into-runc-and-oci-specifications
+
+    ----
+
+    Open Container Initiative Runtime Specification
+    https://github.com/opencontainers/runtime-spec
+
+    Kata Containers
+    https://katacontainers.io/
+
+    crun
+    https://github.com/containers/crun
+
+    ----
+
+    Authoring OCI Registry Artifacts - Quick Guide
+    https://stevelasker.blog/2019/05/11/authoring-oci-registry-artifacts-quick-guide/
+
+    Cloud Native Artifact Registries evolve from Docker Container Registries
+    https://stevelasker.blog/2019/01/25/cloud-native-artifact-stores-evolve-from-container-registries/
+
+    Distributing with Distribution: Upcoming Changes to Helm Chart Repositories
+    https://blog.bacongobbler.com/post/2019-01-25-distributing-with-distribution/index.html
+
+
+    ----
+
+    OCI Distribution Specification
+    https://github.com/opencontainers/distribution-spec
+
+    Distribution
+    https://github.com/distribution/distribution
+
+    GitHub Container Registry
+    https://docs.github.com/en/packages/guides/about-github-container-registry
+
+    GitLab Container Registry
+    https://docs.gitlab.com/ee/user/packages/container_registry/
+
+    DigitalOcean Container Registry
+    https://www.digitalocean.com/products/container-registry/
+
+    CNCF Harbor
+    https://goharbor.io/
+
+    Helm Repos and Container Registry Convergence Proposal
+    https://github.com/helm/community/tree/3689b3202e35361274241dc4ec188e1e6f1a2e53/proposals/helm-repo-container-registry-convergence
+
+

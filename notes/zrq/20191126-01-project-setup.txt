@@ -29,23 +29,21 @@
 
     makeproject pavonia
 
---START--
-makeproject pavonia
-Creating project [pavonia]
-Checking settings [/home/Zarquan/pavonia.settings]
-Creating settings [/home/Zarquan/pavonia.settings]
-Checking [/var/local/projects/pavonia]
-Creating [/var/local/projects/pavonia]
-Checking [/var/local/projects/pavonia]
-Checking [/var/local/projects/pavonia/github-zrq]
-Creating [/var/local/projects/pavonia/github-zrq]
-/var/local/projects/pavonia ~
-Cloning into 'github-zrq'...
-remote: Enumerating objects: 16, done.
-remote: Counting objects: 100% (16/16), done.
-remote: Compressing objects: 100% (15/15), done.
-remote: Total 16 (delta 3), reused 0 (delta 0), pack-reused 0
-Receiving objects: 100% (16/16), 15.29 KiB | 5.10 MiB/s, done.
-Resolving deltas: 100% (3/3), done.
---END--
+    >   makeproject pavonia
+    >   Creating project [pavonia]
+    >   Checking settings [/home/Zarquan/pavonia.settings]
+    >   Creating settings [/home/Zarquan/pavonia.settings]
+    >   Checking [/var/local/projects/pavonia]
+    >   Creating [/var/local/projects/pavonia]
+    >   Checking [/var/local/projects/pavonia]
+    >   Checking [/var/local/projects/pavonia/github-zrq]
+    >   Creating [/var/local/projects/pavonia/github-zrq]
+    >   /var/local/projects/pavonia ~
+    >   Cloning into 'github-zrq'...
+    >   remote: Enumerating objects: 16, done.
+    >   remote: Counting objects: 100% (16/16), done.
+    >   remote: Compressing objects: 100% (15/15), done.
+    >   remote: Total 16 (delta 3), reused 0 (delta 0), pack-reused 0
+    >   Receiving objects: 100% (16/16), 15.29 KiB | 5.10 MiB/s, done.
+    >   Resolving deltas: 100% (3/3), done.
 
