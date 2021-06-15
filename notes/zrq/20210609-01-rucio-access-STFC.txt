@@ -1,0 +1,390 @@
+#
+# <meta:header>
+#   <meta:licence>
+#     Copyright (c) 2021, ROE (http://www.roe.ac.uk/)
+#
+#     This information is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This information is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#   </meta:licence>
+# </meta:header>
+#
+#zrq-notes-time
+#zrq-notes-indent
+#zrq-notes-crypto
+#zrq-notes-ansible
+#zrq-notes-osformat
+#zrq-notes-zeppelin
+#
+
+
+# -----------------------------------------------------
+# Create our SSH configuration
+#[user@desktop]
+
+    gedit "${HOME}/.ssh/config" &
+
+    +   Host bastion gridpp-bastion
+    +       HostName rucio-bastion.gridpp.rl.ac.uk
+    +       User dmorris
+    +       IdentityFile ~/.ssh/dmr.grid.ac.uk.rsa
+    +       ServerAliveInterval 60
+    +       ServerAliveCountMax 5
+    +       ControlPath ~/.ssh/gridpp-%r@%h:%p
+    +       ControlMaster auto
+    +       ControlPersist 5m
+
+
+# -----------------------------------------------------
+# Login to the bastion host to check the config
+#[user@desktop]
+
+    ssh bastion \
+        '
+        date
+        hostname -f
+        '
+
+    >   Wed  9 Jun 13:03:10 UTC 2021
+    >   bastion.novalocal
+
+
+# -----------------------------------------------------
+# Login to the bastion and create our .globus directory
+#[user@desktop]
+
+    ssh bastion \
+        '
+        mkdir ${HOME}/.globus
+        '
+
+# -----------------------------------------------------
+# Transfer a copy of our Grid certificate
+#[user@desktop]
+
+    pushd certificates
+
+        scp dmr-grid-public-usercert-202105.pem \
+            bastion:.globus
+
+        scp dmr-grid-private-userkey-202105.pem \
+            bastion:.globus
+
+    popd
+
+
+# -----------------------------------------------------
+# -----------------------------------------------------
+# Fix directory permissions ...
+#[user@bastion]
+
+    chown dmorris:dmorris .globus
+    chmod u=rwx,g=rx,o=rx .globus
+
+    chown dmorris:dmorris RucioConnect.sh
+    chmod u=rwx,g=r,o=r   RucioConnect.sh
+
+    chown dmorris:dmorris .ssh
+    chmod u=rwx,g=rx,o=rx .ssh
+
+
+# -----------------------------------------------------
+# Check the contents of the connect script ...
+#[user@bastion]
+
+    cat RucioConnect.sh
+
+    >   #!/bin/bash
+    >   
+    >   # A Script to set up Rucio to connect
+    >   
+    >   # TNoble 2021-04-12
+    >   
+    >   source /opt/rucio-env/bin/activate
+    >   
+    >   voms-proxy-init -voms dteam
+    >   
+    >   export RUCIO_VO=dtm
+    >   export RUCIO_ACCOUNT=dmorris
+    >   export X509_USER_PROXY=/tmp/x509up_u$(id -u)
+    >   
+    >   rucio whoami
+    >   rucio ping
+
+
+# -----------------------------------------------------
+# Try create our VOMS proxy
+#[user@bastion]
+
+    voms-proxy-init --voms dteam
+
+    >   No credentials found!
+
+
+# -----------------------------------------------------
+# Create symlinks for the standard filenames ?
+#[user@bastion]
+
+    pushd .globus
+
+        ln -s dmr-grid-public-usercert-202105.pem usercert.pem
+        ln -s dmr-grid-private-userkey-202105.pem userkey.pem
+
+        ls -al
+
+    popd
+
+
+    >   -rw------- 1 dmorris dmorris 1863 Jun  9 13:08 dmr-grid-private-userkey-202105.pem
+    >   -rw------- 1 dmorris dmorris 1855 Jun  9 13:08 dmr-grid-public-usercert-202105.pem
+    >   lrwxrwxrwx 1 dmorris dmorris   35 Jun  9 13:12 usercert.pem -> dmr-grid-public-usercert-202105.pem
+    >   lrwxrwxrwx 1 dmorris dmorris   35 Jun  9 13:13 userkey.pem -> dmr-grid-private-userkey-202105.pem
+
+
+# -----------------------------------------------------
+# Try create our VOMS proxy
+#[user@bastion]
+
+    voms-proxy-init --voms dteam
+
+    >   Contacting voms2.hellasgrid.gr:15004 [/C=GR/O=HellasGrid/OU=hellasgrid.gr/CN=voms2.hellasgrid.gr] "dteam"...
+    >   Remote VOMS server contacted succesfully.
+    >   
+    >   VOMS server voms2.hellasgrid.gr:15004 returned the following errors:
+    >   dteam: User unknown to this VO.
+    >   None of the contacted servers for dteam were capable of returning a valid AC for the user.
+    >   User's request for VOMS attributes could not be fulfilled.
+
+
+# -----------------------------------------------------
+# Try create our VOMS proxy inside the rucio client virtual env.
+# https://stackoverflow.com/a/990779
+#[user@bastion]
+
+    source /opt/rucio-env/bin/activate
+
+    voms-proxy-init --voms dteam
+
+    >   Contacting voms2.hellasgrid.gr:15004 [/C=GR/O=HellasGrid/OU=hellasgrid.gr/CN=voms2.hellasgrid.gr] "dteam"...
+    >   Remote VOMS server contacted succesfully.
+    >   
+    >   VOMS server voms2.hellasgrid.gr:15004 returned the following errors:
+    >   dteam: User unknown to this VO.
+    >   None of the contacted servers for dteam were capable of returning a valid AC for the user.
+    >   User's request for VOMS attributes could not be fulfilled.
+
+    deactivate
+
+
+# -----------------------------------------------------
+# Check our certificate DN.
+#[user@bastion]
+
+    cat ~/.globus/usercert.pem | head
+
+    >   Bag Attributes
+    >       localKeyID: A8 DE E6 C1 5B A8 48 BA 62 8F 40 19 DF 3D EB E2 42 FA 0E EB
+    >       friendlyName: myUkCaCertficate
+    >   subject=C = UK, O = eScience, OU = Edinburgh, L = NeSC, CN = dave morris
+    >   
+    >   issuer=C = UK, O = eScienceCA, OU = Authority, CN = UK e-Science CA 2B
+    >   
+    >   -----BEGIN CERTIFICATE-----
+    >   ....
+    >   ....
+
+
+    cat ~/.globus/userkey.pem | head
+
+    >   Bag Attributes
+    >       localKeyID: A8 DE E6 C1 5B A8 48 BA 62 8F 40 19 DF 3D EB E2 42 FA 0E EB
+    >       friendlyName: myUkCaCertficate
+    >   Key Attributes: <No Attributes>
+    >   -----BEGIN PRIVATE KEY-----
+    >   ....
+    >   ....
+
+    #
+    # Email Tim for help ...
+    #
+
+
+# -----------------------------------------------------
+# Try create our VOMS proxy
+#[user@bastion]
+
+    voms-proxy-init --debug --voms dteam
+
+    >   Looking for VOMS AA certificates in /etc/grid-security/vomsdir...
+    >   Loaded VOMS AA certificate with subject CN=cclcgvomsli01.in2p3.fr,OU=CC-IN2P3,O=CNRS,C=FR,O=GRID-FR from file /etc/grid-security/vomsdir/cclcgvomsli01.in2p3.fr.3433.pem
+    >   Loaded VOMS AA certificate with subject CN=lcg-voms.cern.ch,OU=computers,DC=cern,DC=ch from file /etc/grid-security/vomsdir/lcg-voms.cern.ch.2010-01-18.pem
+    >   ....
+    >   ....
+    >   Looking for user credentials in [/home/dmorris/.globus/userkey.pem, /home/dmorris/.globus/usercert.pem]...
+    >   Credentials loaded successfully [/home/dmorris/.globus/userkey.pem, /home/dmorris/.globus/usercert.pem]
+    >   ....
+    >   ....
+    >   Contacting voms2.hellasgrid.gr:15004 [/C=GR/O=HellasGrid/OU=hellasgrid.gr/CN=voms2.hellasgrid.gr] "dteam"...
+    >   Sent HTTP request for https://voms2.hellasgrid.gr:15004/generate-ac?fqans=/dteam&lifetime=43200
+    >   ....
+    >   ....
+    >   Received VOMS response:
+    >   
+    >   <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+    >   <voms>
+    >   <error>
+    >   <code>NoSuchUser</code>
+    >   <message>dteam: User unknown to this VO.</message>
+    >   </error>
+    >   </voms>
+    >   
+    >   Remote VOMS server contacted succesfully.
+    >   
+    >   VOMS server voms2.hellasgrid.gr:15004 returned the following errors:
+    >   dteam: User unknown to this VO.
+    >   None of the contacted servers for dteam were capable of returning a valid AC for the user.
+    >   User's request for VOMS attributes could not be fulfilled.
+    >   org.italiangrid.voms.VOMSError: User's request for VOMS attributes could not be fulfilled.
+    >       at org.italiangrid.voms.clients.impl.DefaultACResolver.getVOMSACs(DefaultACResolver.java:146)
+    >       at org.italiangrid.voms.clients.impl.DefaultVOMSProxyInitBehaviour.initProxy(DefaultVOMSProxyInitBehaviour.java:213)
+    >       at org.italiangrid.voms.clients.VomsProxyInit.execute(VomsProxyInit.java:295)
+    >       at org.italiangrid.voms.clients.VomsProxyInit.<init>(VomsProxyInit.java:71)
+    >       at org.italiangrid.voms.clients.VomsProxyInit.main(VomsProxyInit.java:55)
+
+
+
+# -----------------------------------------------------
+
+    #
+    # Emailed Tim for help ...
+    #
+
+    Hi Dave,
+
+    Sounds like you may not have applied for dteam access? I cannot find you on the dteam users list you can apply here:
+    https://voms2.hellasgrid.gr:8443/voms/dteam/user/home.action
+    in the certificates section about half way down the page
+
+    Thanks
+    Tim
+
+# -----------------------------------------------------
+
+    Dear dmr@roe.ac.uk,
+    you have requested to be a member of VO dteam.
+
+    In order for the registration to proceed, you should confirm this
+    request by going to the following url:
+
+    https://voms2.hellasgrid.gr:8443/voms/dteam/register/confirm-request.action?requestId=893&confirmationId=fcd14f92-d31f-475d-a138-a6e336155033
+
+# -----------------------------------------------------
+
+    VO membership request confirmed.
+    You have succesfully confirmed your VO membership request. The VO administrator has been informed of your request and will handle it as soon as possible.
+
+# -----------------------------------------------------
+
+    Dear dmr@roe.ac.uk,
+    your vo membership request for VO dteam has been approved.
+
+    Your sincerely,
+    The Voms-Admin registration service for VO dteam
+
+# -----------------------------------------------------
+
+    Registered in the dteam VOMS
+    https://voms2.hellasgrid.gr:8443/voms/dteam/user/load.action?userId=966
+
+        /C=UK/O=eScience/OU=Edinburgh/L=NeSC/CN=dave morris
+
+
+# -----------------------------------------------------
+# -----------------------------------------------------
+# Try create our VOMS proxy
+#[user@bastion]
+
+    voms-proxy-init --voms dteam
+
+    >   Contacting voms2.hellasgrid.gr:15004 [/C=GR/O=HellasGrid/OU=hellasgrid.gr/CN=voms2.hellasgrid.gr] "dteam"...
+    >   Remote VOMS server contacted succesfully.
+    >   
+    >   Created proxy in /tmp/x509up_u1022.
+    >   
+    >   Your proxy is valid until Thu Jun 10 03:27:21 UTC 2021
+
+
+# -----------------------------------------------------
+# Export the environment variables
+#[user@bastion]
+
+    export RUCIO_VO=dtm
+    export RUCIO_ACCOUNT=dmorris
+    export X509_USER_PROXY=/tmp/x509up_u$(id -u)
+
+
+# -----------------------------------------------------
+# Try some Rucio commands ..
+#[user@bastion]
+
+    rucio whoami
+
+    >   -bash: rucio: command not found
+
+
+# -----------------------------------------------------
+# Try from inside the rucio client virtual env.
+#[user@bastion]
+
+    source /opt/rucio-env/bin/activate
+
+    rucio whoami
+
+    >   /opt/rucio-env/lib/python2.7/site-packages/OpenSSL/crypto.py:12: CryptographyDeprecationWarning: ....
+    >     from cryptography import x509
+    >   status     : ACTIVE
+    >   account    : dmorris
+    >   account_type : USER
+    >   created_at : 2021-05-20T08:26:17
+    >   updated_at : 2021-05-20T08:26:17
+    >   suspended_at : None
+    >   deleted_at : None
+    >   email      : dmr@roe.ac.uk
+
+
+    rucio ping
+
+    >   /opt/rucio-env/lib/python2.7/site-packages/OpenSSL/crypto.py:12: CryptographyDeprecationWarning: ...
+    >     from cryptography import x509
+    >   1.23.6.post1
+
+
+    rucio list-rses
+
+    >   /opt/rucio-env/lib/python2.7/site-packages/OpenSSL/crypto.py:12: CryptographyDeprecationWarning: ...
+    >     from cryptography import x509
+    >   RAL-LCG2
+    >   test--
+    >   UKI-LT2-IC-HEP
+    >   UKI-LT2-QMUL
+    >   UKI-NORTHGRID-LANCS-HEP
+    >   UKI-NORTHGRID-MAN-HEP
+    >   UKI-SCOTGRID-GLASGOW
+
+
+
+    #
+    # Success of a sort ...
+    # Took ~2days to get here.
+    #
+
+

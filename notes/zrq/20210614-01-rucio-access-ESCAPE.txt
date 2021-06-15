@@ -1,0 +1,336 @@
+#
+# <meta:header>
+#   <meta:licence>
+#     Copyright (c) 2021, ROE (http://www.roe.ac.uk/)
+#
+#     This information is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This information is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#   </meta:licence>
+# </meta:header>
+#
+#zrq-notes-time
+#zrq-notes-indent
+#zrq-notes-crypto
+#zrq-notes-ansible
+#zrq-notes-osformat
+#zrq-notes-zeppelin
+#
+
+    Based on notes from Sara on 11th June.
+
+    How to use Rucio to interact with the ESCAPE data lake
+    https://docs.google.com/document/d/11uCGqrP_TIofAsbm_Kylz2sjsvV4kEv5dLeTbOsKfxI
+
+    Rucio: Scientific Data Management
+    https://link.springer.com/article/10.1007/s41781-019-0026-3
+
+
+# -----------------------------------------------------
+# Run a rucio-client container instance.
+#[user@desktop]
+
+    # Username from ESCAPE IAM
+    ESCAPE_USERNAME=dmorris
+
+    DATA_STORE=/home/Zarquan/Data
+    CERT_STORE=/home/Zarquan/Crypto/UKx509
+
+    docker run \
+        --rm \
+        --tty \
+        --interactive \
+        --name rucio-client \
+        --hostname rucio-client \
+        --env "RUCIO_CFG_ACCOUNT=${ESCAPE_USERNAME:?}" \
+        --volume \
+            "${DATA_STORE:?}:/data:ro,z" \
+        --volume \
+            "${CERT_STORE:?}/dmr-grid-public-usercert-202105.pem:/opt/rucio/etc/client.crt:ro,z" \
+        --volume \
+            "${CERT_STORE:?}/dmr-grid-private-userkey-202105.pem:/opt/rucio/etc/client.key:ro,z" \
+        projectescape/rucio-client:latest
+
+
+    >   Completed short name "projectescape/rucio-client" with unqualified-search registries (origin: /etc/containers/registries.conf)
+    >   ....
+    >   ....
+    >   Trying to pull docker.io/projectescape/rucio-client:latest...
+    >   Getting image source signatures
+    >   ....
+    >   ....
+    >   File rucio.cfg not found. It will generate one.
+    >   Enable shell completion on the rucio commands
+
+
+# -----------------------------------------------------
+# Explore what we have access to inside ..
+#[user@rucio-client]
+
+    id
+
+    >   uid=1000(user) gid=1000(user) groups=1000(user)
+
+    rucio -h
+
+    >   usage: rucio [-h] [--version] [--config CONFIG] [--verbose] [-H ADDRESS]
+    >                [--auth-host ADDRESS] [-a ACCOUNT] [-S AUTH_STRATEGY]
+    >                [-T TIMEOUT] [--robot] [--user-agent USER_AGENT] [--vo VO]
+    >                [-u USERNAME] [-pwd PASSWORD] [--oidc-user OIDC_USERNAME]
+    >                [--oidc-password OIDC_PASSWORD] [--oidc-scope OIDC_SCOPE]
+    >                [--oidc-audience OIDC_AUDIENCE] [--oidc-auto] [--oidc-polling]
+    >                [--oidc-refresh-lifetime OIDC_REFRESH_LIFETIME]
+    >                [--oidc-issuer OIDC_ISSUER] [--certificate CERTIFICATE]
+    >                [--ca-certificate CA_CERTIFICATE]
+    >               ....
+    >               ....
+
+
+    rucio whoami
+
+    >   account_type : SERVICE
+    >   created_at : 2021-05-25T12:05:49
+    >   suspended_at : None
+    >   status     : ACTIVE
+    >   account    : dmorris
+    >   updated_at : 2021-05-25T12:05:49
+    >   deleted_at : None
+    >   email      : dmr@roe.ac.uk
+
+
+    # Show the list of all the registered Rucio Storage (Elements - RSE)
+    rucio list-rses
+
+    >   ALPAMED-DPM
+    >   AWS_WEBDAV
+    >   CNAF-STORM
+    >   CNAF_CMS_TEMP
+    >   DESY-DCACHE
+    >   EULAKE-1
+    >   FAIR-ROOT
+    >   GSI-ROOT
+    >   IN2P3-CC-DCACHE
+    >   INFN-NA-DPM
+    >   INFN-NA-DPM-FED
+    >   INFN-ROMA1
+    >   LAPP-DCACHE
+    >   LAPP-WEBDAV
+    >   ORM-INJECT
+    >   PIC-DCACHE
+    >   PIC-INJECT
+    >   SARA-DCACHE
+
+
+    # Data Identifier (DID) is the primary addressable unit
+    # The global namespace containing all DIDs can be partitioned (into scopes)
+    # at least one scope must exist
+
+    # List all available scopes
+    rucio list-scopes
+
+    >   ESCAPE_CERN_TEAM-noise
+    >   lofar
+    >   SCOPE_TEST_LAPP
+    >   SKA_SKAO_TEAM_MFT
+    >   MAGIC_PIC_BRUZZESE-test
+    >   CMS_INFN_DCIANGOT
+    >   SKA_SKAO_COLLINSON
+    >   FAIR_GSI_SZUBA
+    >   SKA_SKAO_JOSHI-testing
+    >   ESCAPE_DESY_TEAM-testing
+    >   ESCAPE-CCIN2P3-RAHAL-test
+    >   SKA_SKAO_TEAM_SPS
+    >   CTA_LAPP_FREDERIC
+    >   SKA_SKAO_BARNSLEY-testing
+    >   ESCAPE_CERN_TEAM
+    >   VIRGO_EGO_CHANIAL
+    >   ESCAPE_CCIN2P3_RAHAL_test
+    >   LSST_CCIN2P3_GOUNON-test
+    >   SKA_SKAO_TEAM_PSS.jcoll
+    >   SKA_SKAO_TEAM_QOS24
+    >   ESCAPE_CERN_TEAM-testing
+    >   LSST_CCIN2P3_GOUNON
+    >   ATLAS_LAPP_JEZEQUEL
+    >   SKA_SKAO_COLL-testing
+    >   SKA_SKAO_TEAM
+    >   SKA_SKAO_TEAM_PSS
+    >   MAGIC_PIC_BRUZZESE
+    >   LOFAR_ASTRON_GRANGE
+    >   ALBA_TEST
+    >   FAIR_GSI_SZUBA_INGEST
+    >   ATLAS_OD_EDU
+    >   EXPANDS
+    >   VOSPACE_TESTS
+    >   RUG_TEST
+    >   LST_PIC_BRUZZESE
+    >   FAIR_CBM_TEST
+    >   LST_PIC_BRUZZESE-test
+
+    #
+    # Already includes the VOSPACE_TESTS scope created by Sara
+    #
+
+    #
+    # Create our own scope (name format suggested by Yan)
+    rucio-admin \
+        scope add \
+            --account "${RUCIO_CFG_ACCOUNT:?}" \
+            --scope 'CEVO_UEDIN_MORRIS'
+
+    >   Added new scope to account: CEVO_UEDIN_MORRIS-dmorris
+
+
+# -----------------------------------------------------
+# Try upload some data ...
+#[user@rucio-client]
+
+    ONE_WEEK=$((60*60*24*7))
+
+    rucio \
+        upload \
+        --rse 'EULAKE-1' \
+        --lifetime "${ONE_WEEK:?}" \
+        --scope 'CEVO_UEDIN_MORRIS-dmorris' \
+        /data/Gaia/DR2/part-00000-70392076-8b82-4457-8828-22069e7626e9-c000.snappy.parquet
+
+    >   2021-06-15 01:30:13,185	INFO	Preparing upload for file part-00000-70392076-8b82-4457-8828-22069e7626e9-c000.snappy.parquet
+    >   2021-06-15 01:30:13,291	WARNING	Scope CEVO_UEDIN_MORRIS-dmorris not found for the account dmorris.
+    >   2021-06-15 01:30:13,663	ERROR	Database exception.
+    >   Details: (raised as a result of Query-invoked autoflush; consider using a session.no_autoflush block if this flush is occurring prematurely)
+    >   (cx_Oracle.IntegrityError) ORA-02291: integrity constraint (EWP2C_RUCIO.DIDS_SCOPE_FK) violated - parent key not found
+    >   [SQL: INSERT INTO dids (scope, name, account, did_type, is_open, complete, availability, bytes, length, md5, adler32, expired_at, deleted_at, events, guid, project, datatype, run_number, stream_name, prod_step, version, campaign, task_id, panda_id, lumiblocknr, provenance, phys_group, accessed_at, closed_at, eol_at, is_archive, constituent, access_cnt, created_at, updated_at) VALUES (:scope, :name, :account, :did_type, :is_open, :complete, :availability, :bytes, :length, :md5, :adler32, :expired_at, :deleted_at, :events, :guid, :project, :datatype, :run_number, :stream_name, :prod_step, :version, :campaign, :task_id, :panda_id, :lumiblocknr, :provenance, :phys_group, :accessed_at, :closed_at, :eol_at, :is_archive, :constituent, :access_cnt, :created_at, :updated_at)]
+    >   [parameters: {'scope': 'CEVO_UEDIN_MORRIS-dmorris', 'name': 'part-00000-70392076-8b82-4457-8828-22069e7626e9-c000.snappy.parquet', 'account': 'dmorris', 'did_type': 'F', 'is_open': None, 'complete': None, 'availability': 'A', 'bytes': 74114220, 'length': None, 'md5': '3d71b06f5252f7d94c6e7fc8ad379d47', 'adler32': '7a436ff8', 'expired_at': None, 'deleted_at': None, 'events': None, 'guid': None, 'project': None, 'datatype': None, 'run_number': None, 'stream_name': None, 'prod_step': None, 'version': None, 'campaign': None, 'task_id': None, 'panda_id': None, 'lumiblocknr': None, 'provenance': None, 'phys_group': None, 'accessed_at': None, 'closed_at': None, 'eol_at': None, 'is_archive': None, 'constituent': None, 'access_cnt': None, 'created_at': datetime.datetime(2021, 6, 15, 1, 30, 13, 391766), 'updated_at': datetime.datetime(2021, 6, 15, 1, 30, 13, 391772)}]
+    >   (Background on this error at: http://sqlalche.me/e/gkpj)
+
+    #
+    # This was because we added the account name to the scope 'CEVO_UEDIN_MORRIS-dmorris'
+    # when we should have just used the scope 'CEVO_UEDIN_MORRIS'.
+    #
+
+
+# -----------------------------------------------------
+# Try with the right scope name.
+#[user@rucio-client]
+
+    rucio \
+        upload \
+        --rse 'EULAKE-1' \
+        --lifetime "${ONE_WEEK:?}" \
+        --scope 'CEVO_UEDIN_MORRIS' \
+        /data/Gaia/DR2/part-00000-70392076-8b82-4457-8828-22069e7626e9-c000.snappy.parquet
+
+    >   2021-06-15 01:34:51,565	INFO	Preparing upload for file part-00000-70392076-8b82-4457-8828-22069e7626e9-c000.snappy.parquet
+    >   2021-06-15 01:34:51,728	INFO	File DID already exists
+    >   2021-06-15 01:34:52,184	ERROR	The requested service is not available at the moment.
+    >   Details: An unknown exception occurred.
+    >   Details: globus_ftp_control: gss_init_sec_context failed globus_gsi_gssapi: Error with gss credential handle globus_credential: Valid credentials could not be found in any of the possible locations specified by the credential search order. Valid credentials could not be found in any of the possible locations specified by the credential search order. Attempt 1 globus_credential: Error reading host credential globus_sysconfig: Could not find a valid certificate file: The host cert could not be found in:  1) env. var.
+
+    #
+    # Expected something like that - we haven't created our proxy certificate yet.
+    #
+
+# -----------------------------------------------------
+# Create our proxy certificate.
+#[user@rucio-client]
+
+    voms-proxy-init \
+        --cert /opt/rucio/etc/client.crt \
+        --key  /opt/rucio/etc/client.key \
+        --voms escape
+
+    >   Contacting voms-escape.cloud.cnaf.infn.it:15000 [/DC=org/DC=terena/DC=tcs/C=IT/L=Frascati/O=Istituto Nazionale di Fisica Nucleare/OU=Istituto Nazionale di Fisica Nucleare/CN=voms-escape.cloud.cnaf.infn.it] "escape"...
+    >   Remote VOMS server contacted succesfully.
+    >   
+    >   Created proxy in /tmp/x509up_u1000.
+    >   
+    >   Your proxy is valid until Tue Jun 15 13:36:48 UTC 2021
+
+
+# -----------------------------------------------------
+# Try the upload again.
+#[user@rucio-client]
+
+    rucio \
+        upload \
+        --rse 'EULAKE-1' \
+        --lifetime "${ONE_WEEK:?}" \
+        --scope 'CEVO_UEDIN_MORRIS' \
+        /data/Gaia/DR2/part-00000-70392076-8b82-4457-8828-22069e7626e9-c000.snappy.parquet
+
+    >   2021-06-15 01:37:31,501	INFO	Preparing upload for file part-00000-70392076-8b82-4457-8828-22069e7626e9-c000.snappy.parquet
+    >   2021-06-15 01:37:31,687	INFO	File DID already exists
+    >   2021-06-15 01:37:32,887	INFO	Trying upload with gsiftp to EULAKE-1
+    >   ....
+    >   ....
+
+    >   2021-06-15 01:44:10,767	WARNING	Upload attempt failed
+    >   2021-06-15 01:44:10,768	INFO	Exception: RSE does not support requested operation.
+    >   Details: The requested service is not available at the moment.
+    >   Details: An unknown exception occurred.
+    >   Details: The file exists and overwrite is not set
+    >   Traceback (most recent call last):
+    >     File "/usr/local/lib/python3.6/site-packages/rucio/rse/protocols/gfal.py", line 446, in __gfal2_copy
+    >       ret = ctx.filecopy(params, str(src), str(dest))
+    >   gfal2.GError: The file exists and overwrite is not set
+    >   
+    >   During handling of the above exception, another exception occurred:
+    >   
+    >   Traceback (most recent call last):
+    >     File "/usr/local/lib/python3.6/site-packages/rucio/rse/protocols/gfal.py", line 263, in put
+    >       status = self.__gfal2_copy(str(source_url), str(target), None, space_token, transfer_timeout=transfer_timeout)
+    >     File "/usr/local/lib/python3.6/site-packages/rucio/rse/protocols/gfal.py", line 455, in __gfal2_copy
+    >       raise exception.RucioException(error)
+    >   rucio.common.exception.RucioException: An unknown exception occurred.
+    >   Details: The file exists and overwrite is not set
+    >   
+    >   During handling of the above exception, another exception occurred:
+    >   
+    >   Traceback (most recent call last):
+    >     File "/usr/local/lib/python3.6/site-packages/rucio/client/uploadclient.py", line 627, in _upload_item
+    >       retry(protocol_write.put, base_name, pfn_tmp, source_dir, transfer_timeout=transfer_timeout)(mtries=2, logger=logger)
+    >     File "/usr/local/lib/python3.6/site-packages/rucio/common/utils.py", line 1448, in __call__
+    >       return self.func(*self.args, **self.kwargs)
+    >     File "/usr/local/lib/python3.6/site-packages/rucio/rse/protocols/gfal.py", line 271, in put
+    >       raise exception.ServiceUnavailable(error)
+    >   rucio.common.exception.ServiceUnavailable: The requested service is not available at the moment.
+    >   Details: An unknown exception occurred.
+    >   Details: The file exists and overwrite is not set
+    >   
+    >   During handling of the above exception, another exception occurred:
+    >   
+    >   Traceback (most recent call last):
+    >     File "/usr/local/lib/python3.6/site-packages/rucio/client/uploadclient.py", line 281, in upload
+    >       sign_service=sign_service)
+    >     File "/usr/local/lib/python3.6/site-packages/rucio/client/uploadclient.py", line 630, in _upload_item
+    >       raise RSEOperationNotSupported(str(error))
+    >   rucio.common.exception.RSEOperationNotSupported: RSE does not support requested operation.
+    >   Details: The requested service is not available at the moment.
+    >   Details: An unknown exception occurred.
+    >   Details: The file exists and overwrite is not set
+
+    #
+    # Bad error reporting.
+    # Looks like it completed the transfer before discovering it couldn't commit the data?
+    #
+
+
+    >   2021-06-15 01:44:10,778	INFO	Trying upload with root to EULAKE-1
+    >   ....
+    >   ....
+    >   2021-06-15 01:55:51,991	INFO	Successful upload of temporary file. root://eoseulake.cern.ch:1094//eos/eulake/tests/rucio_test/eulake_1/CEVO_UEDIN_MORRIS/b8/c2/part-00000-70392076-8b82-4457-8828-22069e7626e9-c000.snappy.parquet.rucio.upload
+    >   2021-06-15 01:55:52,161	INFO	Successfully uploaded file part-00000-70392076-8b82-4457-8828-22069e7626e9-c000.snappy.parquet
+
+
+    #
+    # Second attempt completed OK.
+    #
+

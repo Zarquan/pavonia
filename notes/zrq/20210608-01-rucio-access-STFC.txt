@@ -1,0 +1,262 @@
+#
+# <meta:header>
+#   <meta:licence>
+#     Copyright (c) 2021, ROE (http://www.roe.ac.uk/)
+#
+#     This information is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This information is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#   </meta:licence>
+# </meta:header>
+#
+#zrq-notes-time
+#zrq-notes-indent
+#zrq-notes-crypto
+#zrq-notes-ansible
+#zrq-notes-osformat
+#zrq-notes-zeppelin
+#
+
+    #
+    # Testing access to the STFC Rucio system at RAL.
+    #
+
+    Email from Tim Noble @ STFC
+
+
+    -------- Original Message --------
+    Subject: RE: Rucio storage
+    Date: 2021-05-20 10:00
+    From: Timothy Noble - STFC UKRI <timothy.noble@stfc.ac.uk>
+    To: Dave Morris <dmr@roe.ac.uk>
+    Copy: "Mark S. Holliman" <msh@roe.ac.uk>, Ian Johnson - STFC UKRI <ian.johnson@stfc.ac.uk>
+
+    Hi Dave,
+
+    I have now added the key to the Bastion, and added a Rucio account for you
+    I will note that your key looks quite odd compared to keys I have seen so far.
+    But if you can now log on then it's all fine.
+
+    You should be able to SSH to the Bastion now and add your cert and key from your
+    grid certificate to a .globus dir in your home directory
+    And your unpacked grid certificate:
+
+                openssl pkcs12 -in <your/grid/certificate> -out usercert.pem -clcerts -nokeys
+                openssl pkcs12 -in <your/grid/certificate> -out userkey.pem -nocerts -nodes
+
+
+    You should then run:
+            voms-proxy-init --voms dteam
+    This will create your proxy for Rucio if everything is set up correctly
+
+    When this works there is a script in your home directory called RucioConnect.sh
+    If you run that in your current shell you will export various variables needed for rucio,
+    and if it returns your user account details and the version of Rucio then everything is
+    set up correctly and you can then use Rucio commands.
+
+    Any problems let me know
+
+    Best Wishes
+
+    Tim
+
+
+# -----------------------------------------------------
+# Login to the Bastion as 'root'.
+#[user@desktop]
+
+    # Hostname of the Bastion is in the STFC document "Rucio - How to access, and utilise"
+    # ssh -I <path/to/rsa> root@rucio-bastion.gridpp.rl.ac.uk
+
+    # The option is wrong in the document, should be -i not -I
+
+    ssh -v -i ~/.ssh/dmr.grid.ac.uk.rsa \
+        root@rucio-bastion.gridpp.rl.ac.uk
+
+
+    >   OpenSSH_8.3p1, OpenSSL 1.1.1k  FIPS 25 Mar 2021
+    >   ....
+    >   ....
+    >   debug1: Will attempt key: /home/Zarquan/.ssh/dmr.grid.ac.uk.rsa RSA SHA256:JC2EtCd+Lf7l/mUTq4xbMcSWPnmBXNoGOUg0/1eFOoQ explicit agent
+    >   ....
+    >   ....
+    >   debug1: Next authentication method: publickey
+    >   debug1: Offering public key: /home/Zarquan/.ssh/dmr.grid.ac.uk.rsa RSA SHA256:JC2EtCd+Lf7l/mUTq4xbMcSWPnmBXNoGOUg0/1eFOoQ explicit agent
+    >   debug1: Authentications that can continue: publickey,gssapi-keyex,gssapi-with-mic,password
+    >   ....
+    >   Received disconnect from 130.246.213.158 port 22:2: Too many authentication failures
+    >   Disconnected from 130.246.213.158 port 22
+
+    #
+    # Comment from Tim:
+    #   I will note that your key looks quite odd compared to keys I have seen so far.
+    #   But if you can now log on then it's all fine.
+    #
+
+# -----------------------------------------------------
+# Comparing public key sent in email with local copy
+#[user@desktop]
+
+    email   ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC4....5LK9Zl3TVWGD8yJxhWbU+zk= dmr@roe.ac.uk
+    local   ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC4....5LK9Zl3TVWGD8yJxhWbU+zk= dmr@roe.ac.uk
+
+# -----------------------------------------------------
+# Test to see if we can use the same key to login to a VM
+#[user@desktop]
+
+    # Transfer our key to the remote VM
+    scp ~/.ssh/dmr.grid.ac.uk.rsa.pub \
+        Hizzoria:.ssh/dmr.grid.ac.uk.rsa.pub
+
+    # Login using our normal key and replace authorized_keys with our grid.ac.uk public key
+    ssh Hizzoria \
+        '
+        cd .ssh
+        mv authorized_keys authorized_keys.bak
+        cp dmr.grid.ac.uk.rsa.pub authorized_keys
+
+        # Wait until the test is completed
+
+        rm authorized_keys
+        rm dmr.grid.ac.uk.rsa.pub
+        mv authorized_keys.bak authorized_keys
+        '
+
+    # Test using our grid.ac.uk key
+    ssh -v -i ~/.ssh/dmr.grid.ac.uk.rsa \
+        Hizzoria
+
+    >   ....
+    >   debug1: Authentications that can continue: publickey,gssapi-keyex,gssapi-with-mic
+    >   debug1: Offering public key: /home/Zarquan/.ssh/dmr.grid.ac.uk.rsa RSA SHA256:JC2EtCd+Lf7l/mUTq4xbMcSWPnmBXNoGOUg0/1eFOoQ explicit agent
+    >   debug1: Server accepts key: /home/Zarquan/.ssh/dmr.grid.ac.uk.rsa RSA SHA256:JC2EtCd+Lf7l/mUTq4xbMcSWPnmBXNoGOUg0/1eFOoQ explicit agent
+    >   debug1: Enabling compression at level 6.
+    >   debug1: Authentication succeeded (publickey).
+    >   Authenticated to 2a03:b0c0:1:d0::b53:6001 ([2a03:b0c0:1:d0::b53:6001]:22).
+    >   ....
+
+    #
+    # Remember to restore the original authorized_keys !!
+    #
+
+
+# -----------------------------------------------------
+# Try again to check ...
+#[user@desktop]
+
+    ssh -v -i ~/.ssh/dmr.grid.ac.uk.rsa \
+        root@rucio-bastion.gridpp.rl.ac.uk
+
+    >   OpenSSH_8.3p1, OpenSSL 1.1.1k  FIPS 25 Mar 2021
+    >   ....
+    >   ....
+    >   debug1: Connecting to rucio-bastion.gridpp.rl.ac.uk [130.246.213.158] port 22.
+    >   debug1: Connection established.
+    >   debug1: identity file /home/Zarquan/.ssh/dmr.grid.ac.uk.rsa type 0
+    >   debug1: identity file /home/Zarquan/.ssh/dmr.grid.ac.uk.rsa-cert type -1
+    >   ....
+    >   ....
+    >   debug1: Next authentication method: publickey
+    >   debug1: Offering public key: /home/Zarquan/.ssh/dmr.grid.ac.uk.rsa RSA SHA256:JC2EtCd+Lf7l/mUTq4xbMcSWPnmBXNoGOUg0/1eFOoQ explicit agent
+    >   debug1: Authentications that can continue: publickey,gssapi-keyex,gssapi-with-mic,password
+    >   debug1: Offering public key: /home/Zarquan/.ssh/zrq.digitalocean.com.rsa RSA SHA256:/5HDo/VpTwieb7CON9ESRb22x4QEYTixk9O2oRkDBaM agent
+    >   debug1: Authentications that can continue: publickey,gssapi-keyex,gssapi-with-mic,password
+    >   debug1: Offering public key: /home/Zarquan/.ssh/zrq.metagrid.co.uk.rsa RSA SHA256:26sAWXfK3hzPzWHrZCqvhj6gKCkmbG/N2U9/AvZaHzI agent
+    >   Received disconnect from 130.246.213.158 port 22:2: Too many authentication failures
+    >   Disconnected from 130.246.213.158 port 22
+
+
+# -----------------------------------------------------
+# Post a copy of our public key for Tim to compare
+#[user@desktop]
+
+    scp ~/.ssh/dmr.grid.ac.uk.rsa.pub \
+        root@data:/var/local/websites/data/sshkeys/dmr.grid.ac.uk.rsa.pub
+
+    curl http://data.metagrid.co.uk/sshkeys/dmr.grid.ac.uk.rsa.pub
+
+        ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC4....5LK9Zl3TVWGD8yJxhWbU+zk= dmr@roe.ac.uk
+
+
+    #
+    # On hold while we ask Tim to check the ssh key ..
+    #
+
+
+# -----------------------------------------------------
+# Try again to check ...
+#[user@desktop]
+
+    ssh -v -i ~/.ssh/dmr.grid.ac.uk.rsa \
+        root@rucio-bastion.gridpp.rl.ac.uk
+
+    >   OpenSSH_8.3p1, OpenSSL 1.1.1k  FIPS 25 Mar 2021
+    >   ....
+    >   debug1: Connecting to rucio-bastion.gridpp.rl.ac.uk [130.246.213.158] port 22.
+    >   debug1: Connection established.
+    >   debug1: identity file /home/Zarquan/.ssh/dmr.grid.ac.uk.rsa type 0
+    >   debug1: identity file /home/Zarquan/.ssh/dmr.grid.ac.uk.rsa-cert type -1
+    >   debug1: Local version string SSH-2.0-OpenSSH_8.3
+    >   debug1: Remote protocol version 2.0, remote software version OpenSSH_7.4
+    >   debug1: match: OpenSSH_7.4 pat OpenSSH_7.0*,OpenSSH_7.1*,OpenSSH_7.2*,OpenSSH_7.3*,OpenSSH_7.4*,OpenSSH_7.5*,OpenSSH_7.6*,OpenSSH_7.7* compat 0x04000002
+    >   debug1: Authenticating to rucio-bastion.gridpp.rl.ac.uk:22 as 'root'
+    >   ....
+    >   debug1: Server host key: ecdsa-sha2-nistp256 SHA256:SqjkSDb9fksOUpNFz1p5VM0iVpUyhDKn4BE5zEZnsrE
+    >   debug1: Host 'rucio-bastion.gridpp.rl.ac.uk' is known and matches the ECDSA host key.
+    >   debug1: Found key in /home/Zarquan/.ssh/known_hosts:32
+    >   ....
+    >   debug1: Next authentication method: publickey
+    >   debug1: Offering public key: /home/Zarquan/.ssh/dmr.grid.ac.uk.rsa RSA SHA256:JC2EtCd+Lf7l/mUTq4xbMcSWPnmBXNoGOUg0/1eFOoQ explicit agent
+    >   debug1: Authentications that can continue: publickey,gssapi-keyex,gssapi-with-mic,password
+    >   debug1: Offering public key: /home/Zarquan/.ssh/zrq.digitalocean.com.rsa RSA SHA256:/5HDo/VpTwieb7CON9ESRb22x4QEYTixk9O2oRkDBaM agent
+    >   debug1: Authentications that can continue: publickey,gssapi-keyex,gssapi-with-mic,password
+    >   debug1: Offering public key: /home/Zarquan/.ssh/zrq.metagrid.co.uk.rsa RSA SHA256:26sAWXfK3hzPzWHrZCqvhj6gKCkmbG/N2U9/AvZaHzI agent
+    >   Received disconnect from 130.246.213.158 port 22:2: Too many authentication failures
+    >   Disconnected from 130.246.213.158 port 22
+
+    #
+    # Email conversation with Tim ...
+    # don't use root, use dmorris
+
+# -----------------------------------------------------
+# Try again to check ...
+#[user@desktop]
+
+    ssh -i ~/.ssh/dmr.grid.ac.uk.rsa \
+        dmorris@rucio-bastion.gridpp.rl.ac.uk
+
+    #
+    # Yep - that works.
+    # I used 'root' because I copied the example from the document "Rucio - How to access, and utilise"
+    # ssh -I <path/to/rsa> root@rucio-bastion.gridpp.rl.ac.uk
+    #
+
+    #
+    # My bad for copying the example and not questioning when it didn't work.
+    # In my defense - the document does explicitly say login as root.
+    #
+
+        Connect to the Rucio-Bastion using ssh
+        $ ssh -I <path/to/rsa> root@rucio-bastion.gridpp.rl.ac.uk
+
+        Switch users to yourself
+        $ su tnoble
+
+        Navigate to your home dir
+        $ cd
+
+
+
+
+
+
+

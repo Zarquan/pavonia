@@ -1,0 +1,60 @@
+#
+# <meta:header>
+#   <meta:licence>
+#     Copyright (c) 2021, ROE (http://www.roe.ac.uk/)
+#
+#     This information is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This information is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#   </meta:licence>
+# </meta:header>
+#
+#zrq-notes-time
+#zrq-notes-indent
+#zrq-notes-crypto
+#zrq-notes-ansible
+#zrq-notes-osformat
+#zrq-notes-zeppelin
+#
+
+    #
+    # Posted a question on the ESCAPE RocketChat
+    #
+
+    dmorris
+    newbie question - is there a new joiner's manual on how to get connected to Rucio ?
+
+    grange
+    Would this be useful to you?
+
+    How to use Rucio to interact with the ESCAPE data lake
+    https://docs.google.com/document/d/11uCGqrP_TIofAsbm_Kylz2sjsvV4kEv5dLeTbOsKfxI
+
+    ESCAPE wiki, WP2-DIOS
+    https://wiki.escape2020.de/index.php/WP2_-_DIOS#Documentation
+
+        Rucio’s documentation
+        https://rucio.readthedocs.io/en/latest/
+
+        How to use Rucio to interact with the ESCAPE data lake
+        https://docs.google.com/document/d/11uCGqrP_TIofAsbm_Kylz2sjsvV4kEv5dLeTbOsKfxI
+
+    #
+    # Login to ESCAPE IAM and link my eScience certificate.
+    # https://iam-escape.cloud.cnaf.infn.it/dashboard#/home
+
+    # Need to have eScience certificate loaded in browser.
+    # eScience certificate automatically detected
+    # Select [link]
+
+
+
