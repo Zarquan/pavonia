@@ -1,0 +1,324 @@
+#
+# <meta:header>
+#   <meta:licence>
+#     Copyright (c) 2021, ROE (http://www.roe.ac.uk/)
+#
+#     This information is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This information is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#   </meta:licence>
+# </meta:header>
+#
+#zrq-notes-time
+#zrq-notes-indent
+#zrq-notes-crypto
+#zrq-notes-ansible
+#zrq-notes-osformat
+#zrq-notes-zeppelin
+#
+
+    Target:
+
+        Migrate the VOSpace specification from Volute svn to GitHub git.
+
+    Result:
+
+        Converted document source in my mersonal fork.
+        Needs work before we merge.
+
+    TODO:
+
+        Tidy up the code.
+        Add the CI automation.
+        Replace the original with a README
+
+    References:
+
+        Many thanks to Ole Streicher for the howto:
+
+        Convert a document from Volute (Subversion) to Github
+        https://github.com/ivoa-std/volute-migration
+
+# -----------------------------------------------------
+# Install the git-svn tools.
+#[user@desktop]
+
+    sudo dnf install git-svn
+
+
+# -----------------------------------------------------
+# Create our target directory.
+#[user@desktop]
+
+    source "${HOME}/projects.env"
+    pushd "${PROJECTS_ROOT:?}"
+        pushd ESCAPE/pavonia
+            mkdir temp
+            pushd temp
+
+
+# -----------------------------------------------------
+# Check-out a copy of the SVN repository.
+#[user@desktop]
+
+    svn co http://volute.g-vo.org/svn/trunk/projects volute
+
+
+# -----------------------------------------------------
+# Remove the linked ivoa-tex directory.
+#[user@desktop]
+
+    pushd volute/grid/vospace/doc/
+        rm -rf ivoatex
+    popd
+
+
+# -----------------------------------------------------
+# Get the conversion script.
+# https://github.com/ivoa-std/volute-migration#1-get-the-conversion-script
+#[user@desktop]
+
+    wget https://raw.githubusercontent.com/ivoa-std/volute-migration/master/convert.sh
+    chmod +x convert.sh
+
+
+# -----------------------------------------------------
+# Convert the repository.
+# https://github.com/ivoa-std/volute-migration#2-convert-the-repository-structure-to-git
+#[user@desktop]
+
+    pushd volute
+
+        ../convert.sh grid/vospace/doc
+
+    popd
+
+
+    >   Initialized empty Git repository in /var/local/projects/ESCAPE/pavonia/temp/volute/doc/.git/
+    >   W: Ignoring error from SVN, path probably does not exist: (160013): Filesystem has no item: '/svn/!svn/rvr/100/trunk/projects/grid/vospace/doc' path not found
+    >   W: Do not be alarmed at the above message git-svn is just searching aggressively for old history.
+    >   This may take a while on large repositories
+    >   r2576 = b956d6f7edf2f7550b09bf00a2c24e8397aaa675 (refs/remotes/git-svn)
+    >   	A	VOSpace2-1.html
+    >   	A	vospace-in-arch.png
+    >   	A	vospace-node-hierarchy.png
+    >   ....
+    >   ....
+    >   r4964 = 9577cb7f6e63cc1eab9f78a21eb8958e0732e96f (refs/remotes/git-svn)
+    >   	M	Makefile
+    >   	M	VOSpace.tex
+    >   r5050 = 3b22d5566244ff29fa852ac2e3dff5468bd4f27f (refs/remotes/git-svn)
+    >   Checked out HEAD:
+    >     https://volute.g-vo.org/svn/trunk/projects/grid/vospace/doc r5050
+    >     % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+    >                                    Dload  Upload   Total   Spent    Left  Speed
+    >   100 20138    0 20138    0     0  25141      0 --:--:-- --:--:-- --:--:-- 25109
+
+
+# -----------------------------------------------------
+# Move the new git repository out of the svn tree.
+#[user@desktop]
+
+    mv volute/doc VOSpace
+
+
+# -----------------------------------------------------
+# Add the PR and REC tags.
+#[user@desktop]
+
+    pushd VOSpace
+        git log --pretty=oneline
+    popd
+
+    >   226a55b098aa25027df3317931a0b980c9c9faee (HEAD -> master) Include CC-BY-SA-4.0 license
+    >   3b22d5566244ff29fa852ac2e3dff5468bd4f27f (git-svn) VOSpace PR to REC (with a few typo fixes)
+    >   9577cb7f6e63cc1eab9f78a21eb8958e0732e96f New VOSpace 2.1 PR
+    >   50a34fedb8c0dce33523a4b4531ed2cbf22528d5 VOSpace 2.1 typo corrections
+    >   55acd2eb76f260f4475e8af11483ea02efa44581 added optional version attribute to other top-level elements
+    >   170e97a0275cab9586065f3085fcbc2d30959735 Reference to XML Schema Versioning note
+    >   da582901d04fdc43e2749b0ff8dd2218d6adf029 cleanup namespace attributes on xml docs
+    >   0dbe029c38daeb57ac6dafd8b4a4591e90f9f41e PR 20170924 updates
+    >   c21c60b19f13413ba91a917bd1e6bd08b5ff8372 VOSpace: removing spurious escape character in a listing.
+    >   dbfe2ed5c3cd1bb659f91959c8ec54a042cee711 VOSpace: SSOAUTH citations fixed for soon-to-be docrepo citation.
+    >   c32ef5ab34a8f7c86f9d0e9236043736172dab7d Removing the vospace/v2.0 StandardsRegExt record.
+    >   74fc24a3733241f53a03bb20a0c0c9f7714f890c More VOS 2.1 changes from feedback
+    >   47ffab8b81ae562ef4064edf1c53727001b630df VOSpace 2.1 PR updates from feedback.
+    >   1eb893f0e97417a9ccd79cbfe1ac6244393eb2a5 Text cleanup based on reader feedback
+    >   5b0ccf4fa88e31f0e1750e16fd48aa37d698ad16 2.1 synctrans cap identifier uses hash instead of question mark
+    >   df004104d99668eac0e28051989459ea05f1269d VOSpace spec: Typographic fixes
+    >   ed6e55827701f53dbaf5ed952b41c956d8c9bae2 VOSpace resource records fixes:
+    >   822acb5bd429a9eefd6207c2e163d88d1bb1a0db VOSpace-core resource record: filling keys from in-document tables.
+    >   f012c3421ca066e0f17294b32253f56e6b762ea9 Adding two draft StandardsRegExt records.
+    >   fe86a08e83c663e7ff8fed7fd0f254a7cc00f032 Updates to VOSpace PR from RFC feedback
+    >   5b28179afea2c760516a785e05e098d3bde0023a Updates to the PR from RFC feedback.
+    >   37c6240fe624b0ef01d08f9e3c568b3bf2a87e8d New version of VOSpace 2.1: PR-VOSpace-2.1-20170405
+    >   ....
+    >   ....
+
+
+    pushd VOSpace
+        git log --pretty='format:%H %ci %s'
+    popd
+
+    >   226a55b098aa25027df3317931a0b980c9c9faee 2021-06-19 04:59:01 +0100 Include CC-BY-SA-4.0 license
+    >   3b22d5566244ff29fa852ac2e3dff5468bd4f27f 2018-06-20 22:00:05 +0000 VOSpace PR to REC (with a few typo fixes)
+    >   9577cb7f6e63cc1eab9f78a21eb8958e0732e96f 2018-05-17 02:47:03 +0000 New VOSpace 2.1 PR
+    >   50a34fedb8c0dce33523a4b4531ed2cbf22528d5 2018-05-02 18:51:41 +0000 VOSpace 2.1 typo corrections
+    >   55acd2eb76f260f4475e8af11483ea02efa44581 2018-04-17 23:19:41 +0000 added optional version attribute to other top-level elements
+    >   170e97a0275cab9586065f3085fcbc2d30959735 2018-03-07 23:20:26 +0000 Reference to XML Schema Versioning note
+    >   da582901d04fdc43e2749b0ff8dd2218d6adf029 2018-03-07 22:44:29 +0000 cleanup namespace attributes on xml docs
+    >   0dbe029c38daeb57ac6dafd8b4a4591e90f9f41e 2017-09-30 17:16:20 +0000 PR 20170924 updates
+    >   c21c60b19f13413ba91a917bd1e6bd08b5ff8372 2017-09-28 14:52:28 +0000 VOSpace: removing spurious escape character in a listing.
+    >   dbfe2ed5c3cd1bb659f91959c8ec54a042cee711 2017-09-28 14:32:45 +0000 VOSpace: SSOAUTH citations fixed for soon-to-be docrepo citation.
+    >   c32ef5ab34a8f7c86f9d0e9236043736172dab7d 2017-09-22 15:11:20 +0000 Removing the vospace/v2.0 StandardsRegExt record.
+    >   74fc24a3733241f53a03bb20a0c0c9f7714f890c 2017-09-21 22:26:28 +0000 More VOS 2.1 changes from feedback
+    >   47ffab8b81ae562ef4064edf1c53727001b630df 2017-09-19 22:56:07 +0000 VOSpace 2.1 PR updates from feedback.
+    >   1eb893f0e97417a9ccd79cbfe1ac6244393eb2a5 2017-09-11 23:30:30 +0000 Text cleanup based on reader feedback
+    >   5b0ccf4fa88e31f0e1750e16fd48aa37d698ad16 2017-08-15 22:13:20 +0000 2.1 synctrans cap identifier uses hash instead of question mark
+    >   df004104d99668eac0e28051989459ea05f1269d 2017-06-09 17:06:14 +0000 VOSpace spec: Typographic fixes
+    >   ed6e55827701f53dbaf5ed952b41c956d8c9bae2 2017-06-09 16:53:50 +0000 VOSpace resource records fixes:
+    >   822acb5bd429a9eefd6207c2e163d88d1bb1a0db 2017-06-07 12:54:48 +0000 VOSpace-core resource record: filling keys from in-document tables.
+    >   f012c3421ca066e0f17294b32253f56e6b762ea9 2017-06-07 09:58:09 +0000 Adding two draft StandardsRegExt records.
+    >   fe86a08e83c663e7ff8fed7fd0f254a7cc00f032 2017-04-21 22:41:48 +0000 Updates to VOSpace PR from RFC feedback
+    >   5b28179afea2c760516a785e05e098d3bde0023a 2017-04-14 00:06:44 +0000 Updates to the PR from RFC feedback.
+    >   37c6240fe624b0ef01d08f9e3c568b3bf2a87e8d 2017-04-05 21:26:41 +0000 New version of VOSpace 2.1: PR-VOSpace-2.1-20170405
+    >   ....
+    >   ....
+
+
+        #
+        # Identify the PR and REC commits.
+        #
+
+    >   ....
+    >   3b22d5566244ff29fa852ac2e3dff5468bd4f27f 2018-06-20 22:00:05 +0000 VOSpace PR to REC (with a few typo fixes)
+    >   9577cb7f6e63cc1eab9f78a21eb8958e0732e96f 2018-05-17 02:47:03 +0000 New VOSpace 2.1 PR
+    >   ....
+    >   0dbe029c38daeb57ac6dafd8b4a4591e90f9f41e 2017-09-30 17:16:20 +0000 PR 20170924 updates
+    >   ....
+    >   37c6240fe624b0ef01d08f9e3c568b3bf2a87e8d 2017-04-05 21:26:41 +0000 New version of VOSpace 2.1: PR-VOSpace-2.1-20170405
+    >   ....
+    >   fc379a9d7ee39c46c8ab186b5d26f7fbbb95049c 2016-04-20 20:42:10 +0000 New VOSpace working draft edits. Removed superfluous curl output in all web service operation examples
+    >   ....
+    >   488435a70e0ad1e74ef3ed2fa7aba267fe765c65 2015-06-03 17:48:31 +0000 VOSpace document revision
+    >   ....
+
+
+    #
+    # Add the git tags.
+    #
+
+    pushd VOSpace
+
+        git tag -a 'v2.1' -m 'VOSpace-2.1 REC 20180620'             '3b22d5566244ff29fa852ac2e3dff5468bd4f27f'
+
+        git tag -a 'v2.1_20180502-pr' -m 'VOSpace-2.1 PR 20180502'  '9577cb7f6e63cc1eab9f78a21eb8958e0732e96f'
+
+        git tag -a 'v2.1_20170924-pr' -m 'VOSpace-2.1 PR 20170924'  '0dbe029c38daeb57ac6dafd8b4a4591e90f9f41e'
+
+        git tag -a 'v2.1_20170405-pr' -m 'VOSpace-2.1 PR 20170405'  '37c6240fe624b0ef01d08f9e3c568b3bf2a87e8d'
+
+        git tag -a 'v2.1_20160420-wd' -m 'VOSpace-2.1 WD 20160420'  'fc379a9d7ee39c46c8ab186b5d26f7fbbb95049c'
+
+        git tag -a 'v2.1_20150601-wd' -m 'VOSpace-2.1 WD 20150601'  '488435a70e0ad1e74ef3ed2fa7aba267fe765c65'
+
+    popd
+
+
+# -----------------------------------------------------
+# Correct our user name and email.
+# https://stackoverflow.com/questions/37805621/change-email-address-in-git
+# http://treeindev.net/article/git-change-commit-name
+#[user@desktop]
+
+    pushd VOSpace
+
+        git config user.email "dmr@roe.ac.uk"
+        git config user.name  "Dave Morris"
+
+        git commit --amend --author="Dave Morris <dmr@roe.ac.uk>"
+
+    popd
+
+
+# -----------------------------------------------------
+# -----------------------------------------------------
+
+    Create our own fork of the IVOA standatd repository.
+    https://github.com/Zarquan/VOSpace
+
+# -----------------------------------------------------
+# -----------------------------------------------------
+# Add the up upstream repository and push.
+# https://github.com/ivoa-std/volute-migration#3-create-a-github-repository-and-push
+# https://stackoverflow.com/questions/37937984/git-refusing-to-merge-unrelated-histories-on-rebase
+# https://stackoverflow.com/a/37938036
+#[user@desktop]
+
+    pushd VOSpace
+
+        git remote add origin git@github.com:Zarquan/VOSpace
+
+        git pull --allow-unrelated-histories origin master
+
+    popd
+
+    >   From github.com:Zarquan/VOSpace
+    >    * branch            master     -> FETCH_HEAD
+    >   Merge made by the 'recursive' strategy.
+    >    README.md | 9 +++++++++
+    >    1 file changed, 9 insertions(+)
+    >    create mode 100644 README.md
+
+
+    pushd VOSpace
+
+        git push --set-upstream origin master --tags
+
+    popd
+
+    >   Enumerating objects: 7, done.
+    >   Counting objects: 100% (7/7), done.
+    >   Delta compression using up to 4 threads
+    >   Compressing objects: 100% (5/5), done.
+    >   Writing objects: 100% (5/5), 6.60 KiB | 2.20 MiB/s, done.
+    >   Total 5 (delta 2), reused 0 (delta 0), pack-reused 0
+    >   remote: Resolving deltas: 100% (2/2), completed with 1 local object.
+    >   To github.com:Zarquan/VOSpace
+    >      af758f4..6c310ff  master -> master
+    >   Branch 'master' set up to track remote branch 'master' from 'origin'.
+
+
+# -----------------------------------------------------
+# Add the ivoatex module
+# https://github.com/ivoa-std/volute-migration#4-add-the-ivoatex-git-module
+#[user@desktop]
+
+    pushd VOSpace
+
+        git submodule add https://github.com/ivoa-std/ivoatex
+
+    >   Cloning into '/var/local/projects/ESCAPE/pavonia/temp/VOSpace/ivoatex'...
+    >   remote: Enumerating objects: 1106, done.
+    >   remote: Counting objects: 100% (151/151), done.
+    >   remote: Compressing objects: 100% (99/99), done.
+    >   remote: Total 1106 (delta 81), reused 93 (delta 52), pack-reused 955
+    >   Receiving objects: 100% (1106/1106), 1.53 MiB | 639.00 KiB/s, done.
+    >   Resolving deltas: 100% (711/711), done.
+
+
+        git commit -m "Added ivoatex submodule"
+
+        git push
+
+    popd
+
