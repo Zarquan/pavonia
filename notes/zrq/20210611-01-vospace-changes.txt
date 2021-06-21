@@ -78,179 +78,147 @@
     be hard to parse the custom delimiter value from it using automatic tools.
 
 # -----------------------------------------
+Re: Proposals for VOSpace (immutable data)Hi Sonia,
 
-    1. Add a standard property to indicate that node metadata can be edited
-    (e.g. groupread property can be changed), but the node can't be deleted or
-    moved. Suggested names: locked or sticky
+    Hi Sonia,
+    You raised several good suggestions in your email. To avoid confusion I'll reply to each one in a separate email thread.
 
-    Agree this would be useful, but the name could be more descriptive.
-    Suggest
+        1. Add a standard property to indicate that node metadata can be edited
+        (e.g. groupread property can be changed), but the node can't be deleted or
+        moved. Suggested names: locked or sticky
 
-        immutable   = True|False, default False
+    I agree this would be useful. Perhaps suggest 'immutable' as the property name?
+
+        immutable = True|False, default False
 
         ivo://ivoa.net/vospace/core#immutable
 
+
 # -----------------------------------------
+Re: Proposals for VOSpace (data staging property)
 
-    2. Add a standard property to indicate that a data node doesn't contain its
-    data yet (so data has to be retrieved using a pullToVoSpace operation
-    before being able to download the data using a pullFromVoSpace).
+    Hi Sonia,
+    You raised several good suggestions in your email. To avoid confusion I'll reply to each one in a separate email thread.
 
-    This is verys specific to your use case.
+        2. Add a standard property to indicate that a data node doesn't contain its
+        data yet (so data has to be retrieved using a pullToVoSpace operation
+        before being able to download the data using a pullFromVoSpace).
 
-    How would a generic client, with no prior knowledge of your platform
-    know how to make use of this property ?
+    At the moment, this is fairly specific to your use case. I can see how this might
+    be useful in other cases, but it would need some work to make it generic.
 
-    As I understand it, if this property is True, then the client has
-    to initiate a transfer of data from your internal tape system to
-    your internal file transfer system, using a proprietary transfer
-    protocol that is specific to your platform.
+    As I understand it, if this property is True, then the client needs to initiate
+    an internal data transfer from your tape system to your file transfer system,
+    using an internal transfer protocol, before an external data transfer can access
+    the data. Which works, because your client knows what this property means and what
+    action it needs to take.
 
-    All of that works, and accomodating internal proprietary transfer
-    protocols was part of the original intention of the VOSpace design.
-
-    At the moment I don't see a use case for the global international
-    standard to define properties or transfer protocols that are
-    only relevant to your specific site.
-
-    The client needs to know that if this property is False, the client
-    is responsible for using a specific internal transfer protocol to
-    retrieve the data from tape.
-
-    A generic client wouldn't know which protocol to use, nor would
-    it know the specific details of how to use your internal tape
-    retreival protocol.
-
-    This is exactly why the VOSpace standard specifically allows
-    site specific properties and protocols.
-
-    Clients that understand how your internal system works can use
-    the site specific properties and transfer protocols to achieve
-    what they need.
-
-    If you would like to have a publicly resolvable identifier
-    for your properties and transfer protofcols, then there are a couple
-    of options you could try.
-
-    Simplest is to create a wiki page that describes your properties
-    and protocol and then use the URL of the page as the property
-    or protocol identifier.
-
-        urn:ia2:populated
-        urn:ia2:async-trans
-
-    become
-
-        https://wiki.ivoa.net/twiki/bin/view/IVOA/INAFVOSpace#populated
-        https://wiki.ivoa.net/twiki/bin/view/IVOA/INAFVOSpace#async-trans
-
-    If you would like a more formal regsitration of your properties then
-    you are encouraged to register your own identifiers in the IVOA registry,
-    using your authority identifier.
-
-    e.g.
-
-        urn:ia2:populated
-        urn:ia2:async-trans
-
-    become
-
-        ivo://ia2.inaf.it/vospace/tape-store#populated
-
-            True|False, default False
-
-            A True|False flag to indicate if the data is poulated
-            or need to be recalled from the INAF tape system.
-
-        ivo://ia2.inaf.it/vospace/tape-store#async-recall
-
-            An internal data transfer protocol to retreive data from
-            the INAF tape storage system
-
-
-    These would be regsitered in the IVOA registry, making them permanent
-    and accessible to all, but using your registry authority identifier
-    which keeps them specific to your site.
+    I'm not (yet) convinced that there is a case for making this property part of the
+    IVOA standard(*). However, I think Sara and I may need to have something similar
+    for the VOSpace/Rucio bridge we are working on, so perhaps we can work together
+    to create a generic solution that could eventually become part of the IVOA standard.
 
 
 # -----------------------------------------
+Re: Proposals for VOSpace (multiple targets)
 
-    3. Allow to specify multiple target nodes (instead of exactly one target
-    node) for transfer operations. This is useful if the user desires to select
-    a subset of files inside a folder instead of the whole folder.
+    Hi Sonia,
+    You raised several good suggestions in your email. To avoid confusion I'll reply to each one in a separate email thread.
 
-    This works in your specific case because your internal transfer protocol
-    handles multiple files.
+            3. Allow to specify multiple target nodes (instead of exactly one target
+            node) for transfer operations. This is useful if the user desires to select
+            a subset of files inside a folder instead of the whole folder.
 
-    If we allow multiple target nodes, we would need to define how this would
-    work for the existing transfer protocols.
+    This works in your specific case because your staging transfer protocol handles multiple files.
+    If we added support for multiple target nodes in the standard, we would need to define how this
+    would work for all the other transfer protocols.
 
-    Specifically, what does this mean ?
+    Specifically, what does this mean?
 
-        <vos:targets>
-            <vos:target>vos://..../file-one</vos:target>
-            <vos:target>vos://..../file-two</vos:target>
-        </vos:targets>
+        <vos:target>vos://..../file-one</vos:target>
+        <vos:target>vos://..../file-two</vos:target>
         <vos:direction>pullFromVoSpace</vos:direction>
         <vos:protocol uri="ivo://ivoa.net/vospace/core#httpget"/>
 
     Concatenating the content of the two files into one http stream is probably not what was intended.
 
-    The standard allows the service to offer multiple protocol endpoints for a single transfer
+    The standard allows the service to offer multiple protocol endpoints for a single transfer.
+    If we added support for multiple targets, then we would need to define how to link the
+    different targets to the different endpoints.
 
         <vos:transfer xmlns:vos="http://www.ivoa.net/xml/VOSpace/v2.0" version="2.1">
+            ....
             <vos:target>vos://..../file-one</vos:target>
-            </vos:targets>
-            <vos:direction>pullFromVoSpace</vos:direction>
+            <vos:target>vos://..../file-two</vos:target>
+            ....
             <vos:protocol uri="ivo://ivoa.net/vospace/core#httpget">
+                <!--+
+                    | Would this get one or both targets?
+                    | If only one, how do we identify which one?
+                    +-->
                 <vos:endpoint>http://..../Wahb9Elu</vos:endpoint>
             </vos:protocol>
             <vos:protocol uri="ivo://ivoa.net/vospace/core#httpget">
-                <vos:endpoint>http://..../cie2AiD8</vos:endpoint>
+                <!--+
+                    | Would this get one or both targets?
+                    | If only one, how do we identify which one?
+                    +-->
+                <vos:endpoint>http://..../ruphoh4B</vos:endpoint>
             </vos:protocol>
         </vos:transfer>
 
-    If we allowed multiple targets, then how would we link the different targets to the offered endpoints ?
-
-        <vos:transfer xmlns:vos="http://www.ivoa.net/xml/VOSpace/v2.0" version="2.1">
-            <vos:target>vos://..../file-one</vos:target>
-            <vos:target>vos://..../file-two</vos:target>
-            <vos:direction>pullFromVoSpace</vos:direction>
-            <vos:protocol uri="ivo://ivoa.net/vospace/core#httpget">
-                <vos:endpoint>http://..../Wahb9Elu</vos:endpoint> <-- which target would this get ?
-            </vos:protocol>
-            <vos:protocol uri="ivo://ivoa.net/vospace/core#httpget">
-                <vos:endpoint>http://..../cie2AiD8</vos:endpoint>
-            </vos:protocol>
-        </vos:transfer>
-
-    If we allowed multiple targets, would we allow the targets to come from different locations ?
+    If we added support for multiple targets, would this include targets from different
+    locations? If not, then we would need to define how we would prevent them.
 
         <vos:targets>
+            <!--+
+                | This is a target in the CADC VOSpace.
+                +-->
             <vos:target>vos://CADC/..../file-one</vos:target>
+            <!--+
+                | This is a target in the INAF VOSpace.
+                +-->
             <vos:target>vos://INAF/..../file-two</vos:target>
+            ....
+            <vos:protocol uri="ivo://ivoa.net/vospace/core#httpget">
+                <!--+
+                    | Would this get data from both spaces?
+                    +-->
+                <vos:endpoint>http://..../cie2AiD8</vos:endpoint>
+            </vos:protocol>
+
         </vos:targets>
 
-    In short, this raises too many complications.
+    As it stands I think this raises too many complications.
 
     There is perhaps a simpler solution using the existing standard.
 
-    * Create a container node in your VOSpace.
+    * Create a container node.
     * Use links to add the intended targets to the container.
-    * Apply the internal data transfer to the container node.
+    * Apply the staging transfer to the container node.
 
-    This acheives the transfer of multiple targets in one atomic step
-    which you require in a way that is clear and understandable to
-    to generic VOSpace clients and to human users.
+    I think this achieves the same goal, of transferring multiple targets in a single transfer,
+    in a way that is understandable to both generic VOSpace clients and to human users, without
+    requiring a change to the standard.
+
 
 # -----------------------------------------
+Re: Proposals for VOSpace (recursive metadata changes)
 
-    4. Add a mechanism to update certain metadata recursively on all child
-    nodes. It is particularly useful for setting groupread and groupwrite
-    properties.
+    Hi Sonia,
+    You raised several good suggestions in your email. To avoid confusion I'll reply to each one in a separate email thread.
 
-    I agree with Pat, using UWS to implement this as an asynchronous operation
-    makes sense.
+        4. Add a mechanism to update certain metadata recursively on all child
+        nodes. It is particularly useful for setting groupread and groupwrite
+        properties.
+
+    This sounds like a useful extension that at least one other site has also implemented.
+
+    I agree with Pat, it probably makes sense to use UWS to implement this as an asynchronous operation.
+
+    If so, would it be a separate stand-alone UWS service, or do we define it as an optional service capability in the VOSpace specification?
+
+    Perhaps Pat or Brian could describe how their service makes this option available to clients ?
 
 # -----------------------------------------
 
@@ -260,118 +228,77 @@
     Yep, agree.
 
 # -----------------------------------------
+Re: Proposals for VOSpace (content size)
 
-    6. Clarify what to use as folder size (should it be the total size of its
-    content?)
+    Hi Sonia,
+    You raised several good suggestions in your email. To avoid confusion I'll reply to each one in a separate email thread.
 
-    This is hard to do because VOSpace is *not* a file storage system
-    VOSpace is designed as an abstract space to access data.
+        6. Clarify what to use as folder size (should it be the total size of its content?)
 
-    It can be used to store files, but that is just one use case.
+    Content size is hard to do because VOSpace is not just a file storage system. VOSpace is, as the name implies,
+    an abstract space to access data. It can be used to store files, but that is just one use case.
 
-    For example, a node in VOSpace can represent an image.
-    The VOSpace service can provide different views of the image, e.g. JPEG, PNG or FITS, full size, cutout or thumbnail.
-    Each of the views would have a different number of bytes.
+    For example, a node in VOSpace can represent an image. The VOSpace service can provide different views ofthe image,
+    e.g. JPEG, PNG or FITS, full size, cutout or thumbnail. Each of the views would have a different number of bytes.
 
-    Several image nodes could be put in a container node.
-    The VOSpace service can provide different views of the container, e.g. HTML listing page, tar.gz file or a SIAP service.
+    Several image nodes could be put in a container node. The VOSpace service can provide different views of the container,
+    e.g. HTML page with thumbnails, tar.gz file or a SIAP service.
 
-    Only one of these, the tar,gz file, has a size in bytes.
-    The others are abstract views for accessing the data.
+    Only one of these, the tar,gz file, has a size in bytes. The others are abstract views for accessing the data.
+    Even in the simplest case, a tar.gz of the original image files, there are two content sizes, the total size
+    of all the images, or the size of the compressed tar.gz file.
 
-    For tabular data, a VOSpace node can represent a database table.
-    The VOSpace service can provide different views of the table, e.g. VOTable or FITS file, but the size of the downloadable content
-    of those views is not directly related to the size on disc that the database service uses to store the data.
+    For tabular data, a VOSpace node can represent a database table. The VOSpace service can provide different views
+    of the table, e.g. VOTable or FITS file, but the size of the downloadable content of those views is not directly
+    related to the size on disc that the database service uses to store the data.
 
-    In this example, it is likley that the content of the VOTable or FITS files would be generated on demand,
-    streaming the data in response to a HTTP GET request.
-    In which case the server would never see the whole of the content as an entity that could be measured.
+    In this example, it is likely that the content of the VOTable or FITS files would be generated on demand, streaming
+    the data in response to a HTTP GET request. In which case the server would never see the whole of the content as an
+    entity that could be measured.
 
-    Several table nodes could be put in a container node.
-    The VOSpace service can provide different views of the container, e.g. HTML listing page, multi-table VOTable file or a TAP service.
+    Several table nodes could be put in a container node. The VOSpace service can provide different views of the container,
+    e.g. HTML listing page, multi-table VOTable file or a TAP service.
 
-    Only one of these, multi-table VOTable file, has a size in bytes, but again, the content would probably be
-    generated on the fly in response ot a HTTP GET request, so the server would never see the whole
-    content as a measurable object.
+    Only one of these, multi-table VOTable file, has a size in bytes, but again, the content would probably be generated
+    on the fly in response to a HTTP GET request, so the server would never see the whole content as a measurable object.
+
+    I think the best we can do is say how many things (images or tables) the container contains. If we try to do anything
+    more, we will end up presenting the right value for one view and the wrong value for all the other views.
+
 
 # -----------------------------------------
+    Re: Proposals for VOSpace (paginated response)
 
-    7. On the getNode endpoint add parameters to perform paginated requests.
-    Useful for nodes having too many children.
+    Hi Sonia,
+    You raised several good suggestions in your email. To avoid confusion I'll reply to each one in a separate email thread.
 
-    This sounds simple but is actually very complicated to implement.
+            7. On the getNode endpoint add parameters to perform paginated requests.
+            Useful for nodes having too many children.
 
-    The requirement is to describe a design that does not put a heavy load on the
-    server, can reliably handle the deletion or insertion of nodes
-    between page requests without producing duplicate rows in the results
-    and does not require the use of a relational database to implement it.
+    Paginated response sounds simple, but it turns out to be complicated to implement.
+
+    We would need to define a design that does not put a heavy load on the server, can reliably handle the insertion
+    or deletionof nodes between requests without producing duplicate rows in the results, and does not require the
+    use of a relational database to implement it.
+
+    As far as I know, everyone who has looked at this has decided that it is easier to do it on the client side than
+    on the server side. Perhaps someone would like to look at this again and propose a definition for how a paginated
+    response could work?
+
+    For me, I see pagination as a client side display function rather than a server side data access function.
+    Is there a strong use case for doing this on the server side ?
+
+    Bear in mind that even if we did define a new property for pagination, existing version 2.1 services would not
+    understand it. So unless we make the new property mandatory, everyone adopts the new standard, and we deprecate
+    the version 2.1 standard, clients would still have to cope with large responses from version 2.1 services.
+
 
 # -----------------------------------------
+Re: Proposals for VOSpace (paginated response)
 
-    8. Clarify how to define a custom delimiter for properties having multiple
-    values.
+Hi Sonia,
+You raised several good suggestions in your email. To avoid confusion I'll reply to each one in a separate email thread.
 
-    Can you describe the use case for this ?
+    8. Clarify how to define a custom delimiter for properties having multiple values.
 
-    If the property is one of the standard properties defined in the VOSpace standard,
-    then presumably the standard would define what the delimiter is.
-
-    For a custom property, the assumption is that if I include a custom property,
-    e.g. urn:dave:custom-one in the metadata for a node, then that property is only
-    relevant to client software that is designed to handle it.
-
-    Generic clients are free to either treat it as a string or to ignore the property completely.
-
-    If I design my client to read my custom property, then I will know
-    what the delimiter is, because I defined the property.
-
-    If you want a way for others to know what your property contains, then
-    you can add a descriton of the property, its content, meaning and delimiter
-    in the resource that is pointed to by your property identifier.
-
-    For example I can use a wiki page to descibe my custom property, and use
-    the URL of that wiki page to tell other people what my property contains.
-
-    For example instead of using this URI
-
-        urn:dave:custom-one
-
-    I could use this URL
-
-        https://wiki.ivoa.net/twiki/bin/view/IVOA/MyCustomProperty20210611
-
-    That way devlopers of client software would be able to find out what my custom
-    property cntains and how to interpret it.
-
-    In theory we could define a way to publish a machine readable schema for describing the
-    content of a custom property.
-    Perhaps by linking or embedding a the schema in the property description.
-
-    However, although this would enable a generic client to
-    understand that this is a list of things, and what the delimiter is,
-    the client would still not know what to do with the values in the list.
-
-    We would need some kind of data model to be able to tell a generic client
-    that my custom property contained a list of names of colours,
-    and how the client should use them.
-
-
-
-
-
-
-
-
-
-            urn:ia2:populated
-        urn:ia2:async-trans
-
-    become
-
-        ivo://ia2.inaf.it/vospace/tape-store#populated
-
-            True|False, default False
-
-            A True|False flag to indicate if the data is poulated
-            or need to be recalled from the INAF tape system.
 
