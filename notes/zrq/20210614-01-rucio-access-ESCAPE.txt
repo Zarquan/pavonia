@@ -35,6 +35,11 @@
     https://link.springer.com/article/10.1007/s41781-019-0026-3
 
 
+    TODO Need to solve issues with file access in Podman.
+    In Podman, client.crt and client.key are owned by root rather than user.
+    This causes problems for voms-proxy-init, which needs ownership set to chmod 400.
+
+
 # -----------------------------------------------------
 # Run a rucio-client container instance.
 #[user@desktop]
@@ -249,9 +254,9 @@
 
     >   Contacting voms-escape.cloud.cnaf.infn.it:15000 [/DC=org/DC=terena/DC=tcs/C=IT/L=Frascati/O=Istituto Nazionale di Fisica Nucleare/OU=Istituto Nazionale di Fisica Nucleare/CN=voms-escape.cloud.cnaf.infn.it] "escape"...
     >   Remote VOMS server contacted succesfully.
-    >   
+    >
     >   Created proxy in /tmp/x509up_u1000.
-    >   
+    >
     >   Your proxy is valid until Tue Jun 15 13:36:48 UTC 2021
 
 
@@ -281,9 +286,9 @@
     >     File "/usr/local/lib/python3.6/site-packages/rucio/rse/protocols/gfal.py", line 446, in __gfal2_copy
     >       ret = ctx.filecopy(params, str(src), str(dest))
     >   gfal2.GError: The file exists and overwrite is not set
-    >   
+    >
     >   During handling of the above exception, another exception occurred:
-    >   
+    >
     >   Traceback (most recent call last):
     >     File "/usr/local/lib/python3.6/site-packages/rucio/rse/protocols/gfal.py", line 263, in put
     >       status = self.__gfal2_copy(str(source_url), str(target), None, space_token, transfer_timeout=transfer_timeout)
@@ -291,9 +296,9 @@
     >       raise exception.RucioException(error)
     >   rucio.common.exception.RucioException: An unknown exception occurred.
     >   Details: The file exists and overwrite is not set
-    >   
+    >
     >   During handling of the above exception, another exception occurred:
-    >   
+    >
     >   Traceback (most recent call last):
     >     File "/usr/local/lib/python3.6/site-packages/rucio/client/uploadclient.py", line 627, in _upload_item
     >       retry(protocol_write.put, base_name, pfn_tmp, source_dir, transfer_timeout=transfer_timeout)(mtries=2, logger=logger)
@@ -304,9 +309,9 @@
     >   rucio.common.exception.ServiceUnavailable: The requested service is not available at the moment.
     >   Details: An unknown exception occurred.
     >   Details: The file exists and overwrite is not set
-    >   
+    >
     >   During handling of the above exception, another exception occurred:
-    >   
+    >
     >   Traceback (most recent call last):
     >     File "/usr/local/lib/python3.6/site-packages/rucio/client/uploadclient.py", line 281, in upload
     >       sign_service=sign_service)
