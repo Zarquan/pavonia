@@ -1,0 +1,266 @@
+#
+# <meta:header>
+#   <meta:licence>
+#     Copyright (c) 2021, ROE (http://www.roe.ac.uk/)
+#
+#     This information is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This information is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#   </meta:licence>
+# </meta:header>
+#
+#zrq-notes-time
+#zrq-notes-indent
+#zrq-notes-crypto
+#zrq-notes-ansible
+#zrq-notes-osformat
+#zrq-notes-zeppelin
+#
+
+    Target:
+
+        Add the CI automation to our GitHub repository.
+
+    Result:
+
+        Automatic preview works :-)
+
+    TODO:
+
+        Update the ivoatex Docker container.
+
+
+# -----------------------------------------------------
+# Create our target directory and local clone.
+#[user@desktop]
+
+    source "${HOME}/projects.env"
+    pushd "${PROJECTS_ROOT:?}"
+        pushd IVOA/ivoa-std
+
+            mkdir VOSpace
+            pushd VOSpace
+
+                git clone --recurse-submodules git@github.com:Zarquan/VOSpace.git github-zrq
+
+            popd
+        popd
+    popd
+
+
+    >   Cloning into 'github-zrq'...
+    >   remote: Enumerating objects: 264, done.
+    >   remote: Counting objects: 100% (264/264), done.
+    >   remote: Compressing objects: 100% (115/115), done.
+    >   remote: Total 264 (delta 148), reused 260 (delta 147), pack-reused 0
+    >   Receiving objects: 100% (264/264), 1.89 MiB | 1.59 MiB/s, done.
+    >   Resolving deltas: 100% (148/148), done.
+
+
+# -----------------------------------------------------
+# Create a new ivoatec container.
+#[user@desktop]
+
+    VOSPACE_CODE=/var/local/projects/IVOA/ivoa-std/VOSpace/github-zrq
+
+    podman run \
+        --rm \
+        --tty \
+        --interactive \
+        --name ivoatex \
+        --hostname ivoatex \
+        --volume "${VOSPACE_CODE}:/project:rw,Z" \
+        debian:buster-slim \
+        bash
+
+
+    #
+    # Install the required tools.
+    apt-get update
+    apt-get install -y \
+        build-essential \
+        texlive-latex-extra \
+        zip \
+        xsltproc \
+        texlive-bibtex-extra \
+        imagemagick \
+        ghostscript \
+        cm-super \
+        librsvg2-bin
+
+    >   ....
+    >   Need to get 405 MB of archives.
+    >   After this operation, 1398 MB of additional disk space will be used.
+    >   ....
+    >   ....
+    >   Processing triggers for tex-common (6.11) ...
+    >   debconf: unable to initialize frontend: Dialog
+    >   debconf: (No usable dialog-like program is installed, so the dialog based frontend cannot be used. at /usr/share/perl5/Debconf/FrontEnd/Dialog.pm line 76.)
+    >   debconf: falling back to frontend: Readline
+    >   Running updmap-sys. This may take some time... done.
+    >   Running mktexlsr /var/lib/texmf ... done.
+    >   Building format(s) --all.
+    >   	This may take some time... done.
+    >   Processing triggers for libgdk-pixbuf2.0-0:amd64 (2.38.1+dfsg-1) ...
+
+    # Bloatware !!
+
+
+# -----------------------------------------------------
+# Try build the PDF.
+# https://github.com/ivoa-std/ivoatex#checking-out-a-standard-from-github-and-building-it
+#[root@ivoatex]
+
+    pushd /project
+
+        make biblio
+        make forcetex
+
+    popd
+
+
+# -----------------------------------------------------
+# -----------------------------------------------------
+# Check the PDF looks OK.
+#[user@desktop]
+
+    VOSPACE_CODE=/var/local/projects/IVOA/ivoa-std/VOSpace/github-zrq
+
+    atril "${VOSPACE_CODE:?}/VOSpace.pdf" &
+
+
+# -----------------------------------------------------
+# Check which files have been changed.
+#[user@desktop]
+
+    pushd "${VOSPACE_CODE:?}"
+
+        git status
+
+    >   On branch master
+    >   Your branch is up to date with 'origin/master'.
+    >   
+    >   Untracked files:
+    >     (use "git add <file>..." to include in what will be committed)
+    >   	VOSpace.aux
+    >   	VOSpace.bbl
+    >   	VOSpace.blg
+    >   	VOSpace.log
+    >   	VOSpace.out
+    >   	VOSpace.pdf
+    >   	VOSpace.toc
+    >   	ivoatexmeta.tex
+
+    # We need a gitignore file for these
+
+        cat >> .gitignore << EOF
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.pdf
+*.toc
+ivoatexmeta.tex
+EOF
+
+
+        git status
+
+    >   Untracked files:
+    >     (use "git add <file>..." to include in what will be committed)
+    >   	.gitignore
+
+
+    git add .gitignore
+    git commit -m "Added gitignore" .gitignore
+
+
+# -----------------------------------------------------
+# -----------------------------------------------------
+# Try build the automatic preview.
+# https://github.com/ivoa-std/ivoatex#automatic-pdf-preview-in-github
+#[root@ivoatex]
+
+    pushd /project
+
+        make github-preview
+
+    popd
+
+    >   /bin/sh: 1: git: not found
+    >   make: *** [ivoatex/Makefile:268: .github/workflows/build.yml] Error 127
+    >   make: *** Deleting file '.github/workflows/build.yml'
+
+
+# -----------------------------------------------------
+# Install git.
+#[root@ivoatex]
+
+    apt-get update
+    apt-get install -y git
+
+    >   ....
+    >   ....
+
+
+# -----------------------------------------------------
+# Try build the automatic preview.
+# https://github.com/ivoa-std/ivoatex#automatic-pdf-preview-in-github
+#[root@ivoatex]
+
+    pushd /project
+
+        make github-preview
+
+    popd
+
+    >   -e * GitHub Workflow for PDF preview in PullRequest configured:
+    >         .github/workflows/build.yml
+    >     => Run "git commit && git push" to enable GitHub PDF preview.
+    >   -e * GitHub Workflow for PDF preview at pushed commit configured:
+    >           .github/workflows/preview.yml
+    >     -----------------------------------------------------------------------
+    >       Clickable badge toward the generated PDF preview:
+    >   
+    >           [![PDF-Preview](https://img.shields.io/badge/Preview-PDF-blue)](../../releases/download/auto-pdf-preview/VOSpace-draft.pdf)
+    >   
+    >       You can add it into your README.md to give an easy way to access
+    >       the PDF preview to your users.
+    >     -----------------------------------------------------------------------
+    >     => Run "git commit && git push" to enable GitHub PDF preview.
+
+
+    pushd /project
+
+        git status
+
+    popd
+
+    >   On branch master
+    >   Your branch is up to date with 'origin/master'.
+    >   
+    >   Changes to be committed:
+    >     (use "git reset HEAD <file>..." to unstage)
+    >   
+    >   	new file:   .github/workflows/build.yml
+    >   	new file:   .github/workflows/preview.yml
+
+
+    pushd /project
+
+        git commit -m 'Add/Update GH-Workflows for PDF Preview'
+        git push
+
+    popd
+
+
