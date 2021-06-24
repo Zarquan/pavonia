@@ -1,0 +1,453 @@
+#
+# <meta:header>
+#   <meta:licence>
+#     Copyright (c) 2021, ROE (http://www.roe.ac.uk/)
+#
+#     This information is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This information is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#   </meta:licence>
+# </meta:header>
+#
+#zrq-notes-time
+#zrq-notes-indent
+#zrq-notes-crypto
+#zrq-notes-ansible
+#zrq-notes-osformat
+#zrq-notes-zeppelin
+#
+
+
+    Target:
+
+        Checkout the ivoa-std version and re-create the PDF for the 2.1 REC version.
+
+    Result:
+
+
+    TODO:
+
+        Update the ivoatex Docker container.
+
+
+# -----------------------------------------------------
+# Create our target directory and local clone.
+#[user@desktop]
+
+    source "${HOME}/projects.env"
+    pushd "${PROJECTS_ROOT:?}"
+        pushd IVOA/ivoa-std
+            pushd VOSpace
+
+                git clone --recurse-submodules git@github.com:ivoa-std/VOSpace.git github-ivoa
+
+            popd
+        popd
+    popd
+
+
+    >   Cloning into 'github-ivoa'...
+    >   remote: Enumerating objects: 274, done.
+    >   remote: Counting objects: 100% (274/274), done.
+    >   remote: Compressing objects: 100% (121/121), done.
+    >   remote: Total 274 (delta 153), reused 264 (delta 150), pack-reused 0
+    >   Receiving objects: 100% (274/274), 1.89 MiB | 1.60 MiB/s, done.
+    >   Resolving deltas: 100% (153/153), done.
+    >   Submodule 'ivoatex' (https://github.com/ivoa-std/ivoatex) registered for path 'ivoatex'
+    >   Cloning into '/var/local/projects/IVOA/ivoa-std/VOSpace/github-ivoa/ivoatex'...
+    >   remote: Enumerating objects: 1121, done.
+    >   remote: Counting objects: 100% (166/166), done.
+    >   remote: Compressing objects: 100% (115/115), done.
+    >   remote: Total 1121 (delta 89), reused 94 (delta 51), pack-reused 955
+    >   Receiving objects: 100% (1121/1121), 1.53 MiB | 1.76 MiB/s, done.
+    >   Resolving deltas: 100% (719/719), done.
+    >   Submodule path 'ivoatex': checked out 'a76963ebc836a5976d374d85c3f3af90aa2d2783'
+
+
+# -----------------------------------------------------
+# Checkout the V2.1 REC tag.
+#[user@desktop]
+
+    VOSPACE_REPO=/var/local/projects/IVOA/ivoa-std/VOSpace/github-ivoa
+
+    pushd "${VOSPACE_REPO:?}"
+
+        git checkout 'v2.1'
+
+    popd
+
+    >   warning: unable to rmdir 'ivoatex': Directory not empty
+    >   Note: switching to 'v2.1'.
+    >   
+    >   You are in 'detached HEAD' state. You can look around, make experimental
+    >   changes and commit them, and you can discard any commits you make in this
+    >   state without impacting any branches by switching back to a branch.
+    >   
+    >   If you want to create a new branch to retain commits you create, you may
+    >   do so (now or later) by using -c with the switch command. Example:
+    >   
+    >     git switch -c <new-branch-name>
+    >   
+    >   Or undo this operation with:
+    >   
+    >     git switch -
+    >   
+    >   Turn off this advice by setting config variable advice.detachedHead to false
+    >   
+    >   HEAD is now at 3b22d55 VOSpace PR to REC (with a few typo fixes)
+
+
+    #
+    # This is interesting.
+    # We have the VOSpace repository at 2.1 tag, but the ivoatex sub-directory is at the current latest.
+    # This may cause problems for references and citations.
+    #
+
+
+
+
+
+# -----------------------------------------------------
+# Create a new ivoatec container.
+#[user@desktop]
+
+    VOSPACE_REPO=/var/local/projects/IVOA/ivoa-std/VOSpace/github-ivoa
+
+    podman run \
+        --rm \
+        --tty \
+        --interactive \
+        --name ivoatex \
+        --hostname ivoatex \
+        --volume "${VOSPACE_REPO}:/project:rw,Z" \
+        debian:buster-slim \
+        bash
+
+
+    #
+    # Install the required tools.
+    apt-get update
+    apt-get install -y \
+        build-essential \
+        texlive-latex-extra \
+        zip \
+        xsltproc \
+        texlive-bibtex-extra \
+        imagemagick \
+        ghostscript \
+        cm-super \
+        librsvg2-bin
+
+    >   ....
+    >   Need to get 405 MB of archives.
+    >   After this operation, 1398 MB of additional disk space will be used.
+    >   ....
+    >   ....
+    >   Processing triggers for tex-common (6.11) ...
+    >   debconf: unable to initialize frontend: Dialog
+    >   debconf: (No usable dialog-like program is installed, so the dialog based frontend cannot be used. at /usr/share/perl5/Debconf/FrontEnd/Dialog.pm line 76.)
+    >   debconf: falling back to frontend: Readline
+    >   Running updmap-sys. This may take some time... done.
+    >   Running mktexlsr /var/lib/texmf ... done.
+    >   Building format(s) --all.
+    >   	This may take some time... done.
+    >   Processing triggers for libgdk-pixbuf2.0-0:amd64 (2.38.1+dfsg-1) ...
+
+
+    # 405 MB download and 1398 MB of dics space for a text formatting system !!
+
+
+# -----------------------------------------------------
+# Try build the PDF.
+# https://github.com/ivoa-std/ivoatex#checking-out-a-standard-from-github-and-building-it
+#[root@ivoatex]
+
+    pushd /project
+
+        make biblio
+        make forcetex
+
+    popd
+
+
+# -----------------------------------------------------
+# -----------------------------------------------------
+# Compare the generated PDF with the official version.
+#[user@desktop]
+
+    VOSPACE_REPO=/var/local/projects/IVOA/ivoa-std/VOSpace/github-ivoa
+    cp "${VOSPACE_REPO}/VOSpace.pdf" /tmp/VOSpace-generated.pdf
+
+    wget \
+        -O '/tmp/REC-VOSpace-2.1.pdf' \
+        'https://ivoa.net/documents/VOSpace/20180620/REC-VOSpace-2.1.pdf'
+
+    diffpdf \
+        '/tmp/REC-VOSpace-2.1.pdf' \
+        '/tmp/VOSpace-generated.pdf'
+
+    #
+    # Lots of differences :-(
+    # I think all of them are due to changes in the ivoatex sub-module.
+    # Many of the references don't resolve because the dictionary in ivoatex has changed.
+    # Fails the reproducability test.
+    #
+    # Unresolved citations mean the size of the text changes.
+    # Cumulative changes to the text size pushes blocks of text
+    # over the page boundary. So we get large differences
+    # at the start and end of pages.
+    #
+
+
+# -----------------------------------------------------
+# Need to move the ivoatex module back to the same date.
+# https://stackoverflow.com/questions/6990484/how-to-checkout-in-git-by-date
+# https://stackoverflow.com/a/6990682
+#[user@desktop]
+
+    VOSPACE_REPO=/var/local/projects/IVOA/ivoa-std/VOSpace/github-ivoa
+
+    pushd "${VOSPACE_REPO:?}"
+
+        pushd ivoatex
+
+            git checkout $(
+                git rev-list \
+                    -n 1 \
+                    --first-parent \
+                    --before="2018-06-20" \
+                    master
+                )
+
+        popd
+    popd
+
+    >   Previous HEAD position was a76963e Merge pull request #51 from pdowler/archdiag-content
+    >   HEAD is now at 7beab2f ivoatexDoc: ivoagroup comment now points to ivoatexDoc.
+
+
+# -----------------------------------------------------
+# Check the versions.
+#[user@desktop]
+
+    pushd "${VOSPACE_REPO:?}"
+
+        git status
+
+        git log -n 1
+
+    popd
+
+    >   HEAD detached at v2.1
+
+    >   commit 3b22d5566244ff29fa852ac2e3dff5468bd4f27f (HEAD, tag: v2.1)
+    >   Author: Brian Major <major.brian@gmail.com>
+    >   Date:   Wed Jun 20 22:00:05 2018 +0000
+    >   
+    >       VOSpace PR to REC (with a few typo fixes)
+
+
+
+    pushd "${VOSPACE_REPO:?}/ivoatex"
+
+        git status
+
+        git log -n 1
+
+    popd
+
+    >   HEAD detached at 7beab2f
+    >   nothing to commit, working tree clean
+
+    >   commit 7beab2fa65e7e34da2a92b7a07e709c89b29dd06 (HEAD)
+    >   Author: Markus Demleitner <msdemlei@ari.uni-heidelberg.de>
+    >   Date:   Tue May 29 19:24:46 2018 +0000
+    >   
+    >       ivoatexDoc: ivoagroup comment now points to ivoatexDoc.
+
+
+
+# -----------------------------------------------------
+# -----------------------------------------------------
+# Try build the PDF from clean.
+# https://github.com/ivoa-std/ivoatex#checking-out-a-standard-from-github-and-building-it
+#[root@ivoatex]
+
+    pushd /project
+
+        make clean
+        make biblio
+        make forcetex
+
+    popd
+
+
+# -----------------------------------------------------
+# -----------------------------------------------------
+# Compare the generated PDF with the official version.
+#[user@desktop]
+
+    VOSPACE_REPO=/var/local/projects/IVOA/ivoa-std/VOSpace/github-ivoa
+    cp -f "${VOSPACE_REPO}/VOSpace.pdf" /tmp/VOSpace-generated.pdf
+
+
+    diffpdf \
+        '/tmp/VOSpace-generated.pdf' \
+        '/tmp/REC-VOSpace-2.1.pdf' \
+        &
+
+    #
+    # Still get differences.
+    # Extra line of whitespace on page #6 between the main text and the synctrans example.
+    # This knocks 2 lines of text on the bottom of the page onto the next page.
+    #
+    # Extra line of whitespace on page #7 between the main text and the synctrans example.
+    # This knocks another 2 lines of text on the bottom of the page onto the next page.
+    # Total 4 lines pushed to the next page.
+    #
+    # On page #9, adding 4 lines at the top pushes 6 lines off the bottom.
+    # ....
+    #
+
+    #
+    # The difference is in the whitespace preceeding a listing block.
+    # Could this be due to the latex library ?
+    #
+
+# -----------------------------------------------------
+# Try using the pre-built ivoatex container.
+#[user@desktop]
+
+    VOSPACE_REPO=/var/local/projects/IVOA/ivoa-std/VOSpace/github-ivoa
+    podman run \
+        --rm \
+        --tty \
+        --interactive \
+        --name ivoatex-docker \
+        --hostname ivoatex-docker \
+        --volume "${VOSPACE_REPO}:/texdata:rw,Z" \
+        ivoa/ivoatex:1.2 \
+        bash
+
+
+# -----------------------------------------------------
+# -----------------------------------------------------
+# Try build the PDF from clean.
+# https://github.com/ivoa-std/ivoatex#checking-out-a-standard-from-github-and-building-it
+#[root@ivoatex-docker]
+
+    pushd /texdata
+
+        make clean
+        make biblio
+        make forcetex
+
+    popd
+
+# -----------------------------------------------------
+# -----------------------------------------------------
+# Compare the generated PDF with the official version.
+#[user@desktop]
+
+    VOSPACE_REPO=/var/local/projects/IVOA/ivoa-std/VOSpace/github-ivoa
+    cp -f "${VOSPACE_REPO}/VOSpace.pdf" /tmp/VOSpace-generated.pdf
+
+    diffpdf \
+        '/tmp/VOSpace-generated.pdf' \
+        '/tmp/REC-VOSpace-2.1.pdf' \
+        &
+
+    #
+    # The only difference is one page number in the contents list.
+    # In the contents list, getViews is on page 39 in generated, page 40 in the REC version
+    # but getViews is actually on page 40 in both versions.
+    # So one line in the table of contents is wrong in the generated version.
+    #
+
+    #
+    # The Docker file for the ivoatex docker image was comitted in Dec 2017.
+    # The Docker file for the ivoatex docker image is based on Debian Stretch.
+
+        FROM debian:stretch-slim
+
+    # The Docker image was pushed 29th Dec 2017.
+    # https://hub.docker.com/layers/ivoa/ivoatex/1.2/images/sha256-d2116d6f062b581f4f2ae8edab5bee11f84ec285d521b02e946ec4cd5a59bae3
+    #
+
+
+# -----------------------------------------------------
+# -----------------------------------------------------
+# Create a new ivoatec container, based on Debian Stretch.
+#[user@desktop]
+
+    VOSPACE_REPO=/var/local/projects/IVOA/ivoa-std/VOSpace/github-ivoa
+
+    podman run \
+        --rm \
+        --tty \
+        --interactive \
+        --name ivoatex-stretch \
+        --hostname ivoatex-stretch \
+        --volume "${VOSPACE_REPO}:/project:rw,Z" \
+        debian:stretch-slim \
+        bash
+
+
+    #
+    # Install the same tools.
+    apt-get update
+    apt-get install -y \
+        build-essential \
+        texlive-latex-extra \
+        zip \
+        xsltproc \
+        texlive-bibtex-extra \
+        imagemagick \
+        ghostscript \
+        cm-super \
+        librsvg2-bin
+
+
+# -----------------------------------------------------
+# -----------------------------------------------------
+# Try build the PDF from clean.
+# https://github.com/ivoa-std/ivoatex#checking-out-a-standard-from-github-and-building-it
+#[root@ivoatex-stretch]
+
+    pushd /project
+
+        make clean
+        make biblio
+        make forcetex
+
+    popd
+
+
+# -----------------------------------------------------
+# -----------------------------------------------------
+# Compare the generated PDF with the official version.
+#[user@desktop]
+
+    VOSPACE_REPO=/var/local/projects/IVOA/ivoa-std/VOSpace/github-ivoa
+    cp -f "${VOSPACE_REPO}/VOSpace.pdf" /tmp/VOSpace-generated.pdf
+
+    diffpdf \
+        '/tmp/VOSpace-generated.pdf' \
+        '/tmp/REC-VOSpace-2.1.pdf' \
+        &
+
+
+    #
+    # Still has the same difference in the table of contents.
+    #
+
+

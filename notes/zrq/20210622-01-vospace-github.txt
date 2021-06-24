@@ -148,7 +148,7 @@
 
     >   On branch master
     >   Your branch is up to date with 'origin/master'.
-    >   
+    >
     >   Untracked files:
     >     (use "git add <file>..." to include in what will be committed)
     >   	VOSpace.aux
@@ -231,9 +231,9 @@ EOF
     >           .github/workflows/preview.yml
     >     -----------------------------------------------------------------------
     >       Clickable badge toward the generated PDF preview:
-    >   
+    >
     >           [![PDF-Preview](https://img.shields.io/badge/Preview-PDF-blue)](../../releases/download/auto-pdf-preview/VOSpace-draft.pdf)
-    >   
+    >
     >       You can add it into your README.md to give an easy way to access
     >       the PDF preview to your users.
     >     -----------------------------------------------------------------------
@@ -248,10 +248,10 @@ EOF
 
     >   On branch master
     >   Your branch is up to date with 'origin/master'.
-    >   
+    >
     >   Changes to be committed:
     >     (use "git reset HEAD <file>..." to unstage)
-    >   
+    >
     >   	new file:   .github/workflows/build.yml
     >   	new file:   .github/workflows/preview.yml
 
