@@ -247,7 +247,8 @@
 
 
 # -----------------------------------------------------
-# Compare the documents.
+# Compare the documents using diffpdf.
+# http://www.qtrac.eu/diffpdf.html
 #[user@desktop]
 
     ls -al "${OUTPUT_PATH:?}"
@@ -285,5 +286,16 @@
 
     # getViews only
 
+
+# -----------------------------------------------------
+# Compare the documents using pdf-diff.
+# https://github.com/JoshData/pdf-diff
+#[user@desktop]
+
+
+    pdf-diff \
+        "${OUTPUT_PATH:?}/REC-VOSpace-2.1.pdf" \
+        "${OUTPUT_PATH:?}/VOSpace-ubuntu-2010.pdf" \
+      > "${OUTPUT_PATH:?}/ubuntu-2010-diff.png"
 
 
