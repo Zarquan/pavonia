@@ -33,6 +33,8 @@
 
     Result:
 
+        Almost there.
+        Single entry in the table of contents is wrong.
 
     TODO:
 
@@ -87,22 +89,22 @@
 
     >   warning: unable to rmdir 'ivoatex': Directory not empty
     >   Note: switching to 'v2.1'.
-    >   
+    >
     >   You are in 'detached HEAD' state. You can look around, make experimental
     >   changes and commit them, and you can discard any commits you make in this
     >   state without impacting any branches by switching back to a branch.
-    >   
+    >
     >   If you want to create a new branch to retain commits you create, you may
     >   do so (now or later) by using -c with the switch command. Example:
-    >   
+    >
     >     git switch -c <new-branch-name>
-    >   
+    >
     >   Or undo this operation with:
-    >   
+    >
     >     git switch -
-    >   
+    >
     >   Turn off this advice by setting config variable advice.detachedHead to false
-    >   
+    >
     >   HEAD is now at 3b22d55 VOSpace PR to REC (with a few typo fixes)
 
 
@@ -252,7 +254,7 @@
     >   commit 3b22d5566244ff29fa852ac2e3dff5468bd4f27f (HEAD, tag: v2.1)
     >   Author: Brian Major <major.brian@gmail.com>
     >   Date:   Wed Jun 20 22:00:05 2018 +0000
-    >   
+    >
     >       VOSpace PR to REC (with a few typo fixes)
 
 
@@ -271,7 +273,7 @@
     >   commit 7beab2fa65e7e34da2a92b7a07e709c89b29dd06 (HEAD)
     >   Author: Markus Demleitner <msdemlei@ari.uni-heidelberg.de>
     >   Date:   Tue May 29 19:24:46 2018 +0000
-    >   
+    >
     >       ivoatexDoc: ivoagroup comment now points to ivoatexDoc.
 
 
@@ -379,6 +381,7 @@
 
         FROM debian:stretch-slim
 
+    #
     # The Docker image was pushed 29th Dec 2017.
     # https://hub.docker.com/layers/ivoa/ivoatex/1.2/images/sha256-d2116d6f062b581f4f2ae8edab5bee11f84ec285d521b02e946ec4cd5a59bae3
     #
@@ -449,5 +452,12 @@
     #
     # Still has the same difference in the table of contents.
     #
+    # TODO
+    # What about using Ubuntu ?
+    # Check with Sara & Sonia what version they use.
+    #
+
+
+
 
 
