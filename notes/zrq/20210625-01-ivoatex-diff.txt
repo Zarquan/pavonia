@@ -62,7 +62,7 @@
 
     for osversion in ${versions[@]}
     do
-        imagename=ivoa/latex:${osversion//[:]/-}
+        imagename=ivoa/ivoatex:${osversion//[:]/-}
 
         echo ""
         echo "OS version [${osversion:?}]"
@@ -78,38 +78,38 @@
     done
 
     >   OS version [ubuntu:20.10]
-    >   Image name [ivoa/latex:ubuntu-20.10]
+    >   Image name [ivoa/ivoatex:ubuntu-20.10]
     >   STEP 1: FROM ubuntu:20.10
     >   ....
     >   ....
-    >   STEP 14: COMMIT ivoa/latex:ubuntu-20.10
+    >   STEP 14: COMMIT ivoa/ivoatex:ubuntu-20.10
     >   --> 574de8ba9e2
     >   574de8ba9e2f6894923ac436cdab44f2ce2387dd386d08cafbb0c1db816dbcb4
 
     >   OS version [ubuntu:20.04]
-    >   Image name [ivoa/latex:ubuntu-20.04]
+    >   Image name [ivoa/ivoatex:ubuntu-20.04]
     >   STEP 1: FROM ubuntu:20.04
     >   ....
     >   ....
-    >   STEP 14: COMMIT ivoa/latex:ubuntu-20.04
+    >   STEP 14: COMMIT ivoa/ivoatex:ubuntu-20.04
     >   --> 6a947c5b79e
     >   6a947c5b79ec17c1aa1b5a42090157e30a5315a459ae2e61fc12df1f6591024d
 
     >   OS version [debian:9-slim]
-    >   Image name [ivoa/latex:debian-9-slim]
+    >   Image name [ivoa/ivoatex:debian-9-slim]
     >   STEP 1: FROM debian:9-slim
     >   ....
     >   ....
-    >   STEP 14: COMMIT ivoa/latex:debian-9-slim
+    >   STEP 14: COMMIT ivoa/ivoatex:debian-9-slim
     >   --> 063ec85c386
     >   063ec85c386ff003358bfd4342a6a10004b1fd4f9b63651f9cc997e15dafb55a
 
     >   OS version [debian:10-slim]
-    >   Image name [ivoa/latex:debian-10-slim]
+    >   Image name [ivoa/ivoatex:debian-10-slim]
     >   STEP 1: FROM debian:10-slim
     >   ....
     >   ....
-    >   STEP 14: COMMIT ivoa/latex:debian-10-slim
+    >   STEP 14: COMMIT ivoa/ivoatex:debian-10-slim
     >   --> 51daac7b19c
     >   51daac7b19c7795ef32c9bb8f9aa4b777438d32cc3d0d2d637caf6e38bd79624
 
@@ -126,7 +126,7 @@
 
     for osversion in ${versions[@]}
     do
-        imagename=ivoa/latex:${osversion//[:]/-}
+        imagename=ivoa/ivoatex:${osversion//[:]/-}
 
         podname=${osversion//[:]/-}
         podname=${podname//[.]/}
@@ -154,22 +154,22 @@
     done
 
     >   OS version [ubuntu:20.10]
-    >   Image name [ivoa/latex:ubuntu-20.10]
+    >   Image name [ivoa/ivoatex:ubuntu-20.10]
     >   Pod name   [ubuntu-2010]
     >   Host name  [ubuntu-2010
     >
     >   OS version [ubuntu:20.04]
-    >   Image name [ivoa/latex:ubuntu-20.04]
+    >   Image name [ivoa/ivoatex:ubuntu-20.04]
     >   Pod name   [ubuntu-2004]
     >   Host name  [ubuntu-2004
     >
     >   OS version [debian:9-slim]
-    >   Image name [ivoa/latex:debian-9-slim]
+    >   Image name [ivoa/ivoatex:debian-9-slim]
     >   Pod name   [debian-9-slim]
     >   Host name  [debian-9-slim
     >
     >   OS version [debian:10-slim]
-    >   Image name [ivoa/latex:debian-10-slim]
+    >   Image name [ivoa/ivoatex:debian-10-slim]
     >   Pod name   [debian-10-slim]
     >   Host name  [debian-10-slim
 
@@ -204,7 +204,7 @@
 
     for osversion in ${versions[@]}
     do
-        imagename=ivoa/latex:${osversion//[:]/-}
+        imagename=ivoa/ivoatex:${osversion//[:]/-}
 
         podname=${osversion//[:]/-}
         podname=${podname//[.]/}

@@ -34,7 +34,9 @@
 
     Result:
 
-        Work in progress ...
+        Results for Ubuntu-20.10, 99.9% identical.
+        One issue with one item in the [Table of Contents].
+
 
 
 # -----------------------------------------------------
@@ -105,15 +107,12 @@
 # Build the document using our ivoatex container.
 #[user@desktop]
 
-    #osname=debian:9-slim
-    #osname=debian:10-slim
-    #osname=ubuntu:20.04
     osname=ubuntu:20.10
 
     podname=${osname//[:]/-}
     podname=${podname//[.]/}
 
-    imagename=ivoa/latex:${osname//[:]/-}
+    imagename=ivoa/ivoatex:${osname//[:]/-}
 
     mkdir "${TEST_PATH:?}/results"
 
@@ -164,6 +163,7 @@
         "${TEST_PATH:?}/results/VOSpace-${podname:?}.pdf"
 
     # One line in the table of contents.
+    # Export as VOSpace-${podname:?}-diff.pdf
 
 
 # -----------------------------------------------------
