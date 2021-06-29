@@ -1,0 +1,186 @@
+#
+# <meta:header>
+#   <meta:licence>
+#     Copyright (c) 2021, ROE (http://www.roe.ac.uk/)
+#
+#     This information is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This information is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#   </meta:licence>
+# </meta:header>
+#
+#zrq-notes-time
+#zrq-notes-indent
+#zrq-notes-crypto
+#zrq-notes-ansible
+#zrq-notes-osformat
+#zrq-notes-zeppelin
+#
+
+
+    Target:
+
+        Verification test for the ivoatex generated VOSpace document.
+
+    Result:
+
+        Work in progress ...
+
+
+# -----------------------------------------------------
+# Create our target directory and checkout a local clone.
+#[user@desktop]
+
+    TEST_PATH=/tmp/vospace-diff
+
+    mkdir "${TEST_PATH:?}"
+    pushd "${TEST_PATH:?}"
+
+        git clone --recurse-submodules git@github.com:ivoa-std/VOSpace.git
+
+    popd
+
+    >   Cloning into 'VOSpace'...
+    >   remote: Enumerating objects: 274, done.
+    >   remote: Counting objects: 100% (274/274), done.
+    >   remote: Compressing objects: 100% (121/121), done.
+    >   remote: Total 274 (delta 153), reused 264 (delta 150), pack-reused 0
+    >   Receiving objects: 100% (274/274), 1.89 MiB | 1.60 MiB/s, done.
+    >   Resolving deltas: 100% (153/153), done.
+    >   Submodule 'ivoatex' (https://github.com/ivoa-std/ivoatex) registered for path 'ivoatex'
+    >   Cloning into '/tmp/vospace-diff/VOSpace/ivoatex'...
+    >   remote: Enumerating objects: 1121, done.
+    >   remote: Counting objects: 100% (166/166), done.
+    >   remote: Compressing objects: 100% (115/115), done.
+    >   remote: Total 1121 (delta 89), reused 94 (delta 51), pack-reused 955
+    >   Receiving objects: 100% (1121/1121), 1.53 MiB | 1.75 MiB/s, done.
+    >   Resolving deltas: 100% (719/719), done.
+    >   Submodule path 'ivoatex': checked out 'a76963ebc836a5976d374d85c3f3af90aa2d2783'
+
+
+# -----------------------------------------------------
+# Checkout the V2.1 REC tag.
+# Not required - there haven't been any changes to the tex document since the REC version.
+#[user@desktop]
+#
+#    pushd "${TEST_PATH:?}/VOSpace"
+#
+#        git checkout 'v2.1'
+#
+#    popd
+#
+
+# -----------------------------------------------------
+# Move the ivoatex module to the version before the V2.1 REC was created.
+#[user@desktop]
+
+    pushd "${TEST_PATH:?}/VOSpace"
+        pushd ivoatex
+
+            git checkout $(
+                git rev-list \
+                    -n 1 \
+                    --first-parent \
+                    --before="2018-06-20" \
+                    master
+                )
+
+        popd
+    popd
+
+    >   Previous HEAD position was a76963e Merge pull request #51 from pdowler/archdiag-content
+    >   HEAD is now at 7beab2f ivoatexDoc: ivoagroup comment now points to ivoatexDoc.
+
+# -----------------------------------------------------
+# Build the document using our ivoatex container.
+#[user@desktop]
+
+    #osname=debian:9-slim
+    #osname=debian:10-slim
+
+    #osname=ubuntu:20.04
+    osname=ubuntu:20.10
+
+    podname=${osname//[:]/-}
+    podname=${podname//[.]/}
+
+    imagename=ivoa/ivoatex:${osname//[:]/-}
+
+    mkdir "${TEST_PATH:?}/results"
+
+    podman run \
+        --rm \
+        --tty \
+        --interactive \
+        --name "${podname:?}" \
+        --hostname "${podname:?}" \
+        --volume "${TEST_PATH:?}/VOSpace:/document:rw,Z" \
+        --volume "${TEST_PATH:?}/results:/results:rw,Z" \
+        "${imagename:?}" \
+        bash -c \
+            '
+            pushd /document
+                make clean
+                make biblio
+                make forcetex
+                mv VOSpace.pdf /results/VOSpace-$(hostname -s).pdf
+            popd
+            '
+
+
+    >   ....
+    >   ....
+    >   Output written on VOSpace.pdf (103 pages, 1017944 bytes).
+    >   Transcript written on VOSpace.log.
+
+
+# -----------------------------------------------------
+# Download the official REC version.
+#[user@desktop]
+
+    wget \
+        -O "${TEST_PATH:?}/results/REC-VOSpace-2.1.pdf" \
+        'https://ivoa.net/documents/VOSpace/20180620/REC-VOSpace-2.1.pdf'
+
+    >   ....
+    >   ....
+    >   2021-06-28 14:02:18 (1.44 MB/s) - ‘/tmp/vospace-diff/results/REC-VOSpace-2.1.pdf’ saved [1017944/1017944]
+
+
+# -----------------------------------------------------
+# Compare the documents using diffpdf.
+# http://www.qtrac.eu/diffpdf.html
+#[user@desktop]
+
+    diffpdf \
+        "${TEST_PATH:?}/results/REC-VOSpace-2.1.pdf" \
+        "${TEST_PATH:?}/results/VOSpace-${podname:?}.pdf"
+
+    # One line in the table of contents.
+    # Export as ${TEST_PATH:?}/results/VOSpace-${podname:?}-diff.png
+
+
+# -----------------------------------------------------
+# Compare the documents using pdf-diff.
+# https://github.com/JoshData/pdf-diff
+#[user@desktop]
+
+    pdf-diff \
+        "${TEST_PATH:?}/results/REC-VOSpace-2.1.pdf" \
+        "${TEST_PATH:?}/results/VOSpace-${podname:?}.pdf" \
+      > "${TEST_PATH:?}/results/VOSpace-${podname:?}-diff.png"
+
+
+
+
+
+

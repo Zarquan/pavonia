@@ -1,0 +1,138 @@
+#
+# <meta:header>
+#   <meta:licence>
+#     Copyright (c) 2021, ROE (http://www.roe.ac.uk/)
+#
+#     This information is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This information is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#   </meta:licence>
+# </meta:header>
+#
+#zrq-notes-time
+#zrq-notes-indent
+#zrq-notes-crypto
+#zrq-notes-ansible
+#zrq-notes-osformat
+#zrq-notes-zeppelin
+#
+
+    Target:
+
+        Create docker images for Ubuntu 21.xx
+
+    Result:
+
+        Version2 21.04 and 21.10 both produce 99.99% documents.
+        Still the same one line in the table of contents.s
+
+
+# -----------------------------------------------------
+# Build our containers using Podman.
+# https://podman.io/
+#[user@desktop]
+
+    source "${HOME}/ivoatex.env"
+
+    versions=(
+        ubuntu:21.10
+        ubuntu:21.04
+        )
+
+    builddate=$(date '+%Y.%m.%d')
+    buildtime=$(date '+%Y-%m-%dT%H:%M:%S')
+
+    for osversion in ${versions[@]}
+    do
+        imagename=ivoa/ivoatex:${osversion//[:]/-}
+
+        echo ""
+        echo "OS version [${osversion:?}]"
+        echo "Image name [${imagename:?}]"
+
+        podman build \
+            --build-arg "builddate=${builddate:?}" \
+            --build-arg "buildtime=${buildtime:?}" \
+            --build-arg "osversion=${osversion:?}" \
+            --tag "${imagename:?}" \
+            "${IVOATEX_CODE:?}/docker"
+
+    done
+
+
+# -----------------------------------------------------
+# Build the document using our ivoatex container.
+#[user@desktop]
+
+    versions=(
+        ubuntu:21.10
+        ubuntu:21.04
+        )
+
+    for osversion in ${versions[@]}
+    do
+        imagename=ivoa/ivoatex:${osversion//[:]/-}
+
+        podname=${osversion//[:]/-}
+        podname=${podname//[.]/}
+
+        echo ""
+        echo "OS version [${osversion:?}]"
+        echo "Image name [${imagename:?}]"
+        echo "Pod name   [${podname:?}]"
+
+        podman run \
+            --rm \
+            --tty \
+            --interactive \
+            --name "${podname:?}" \
+            --hostname "${podname:?}" \
+            --volume "${TEST_PATH:?}/VOSpace:/document:rw,Z" \
+            --volume "${TEST_PATH:?}/results:/results:rw,Z" \
+            "${imagename:?}" \
+            bash -c \
+                '
+                pushd /document
+                    make clean
+                    make biblio
+                    make forcetex
+                    mv VOSpace.pdf /results/VOSpace-$(hostname -s).pdf
+                popd
+                '
+    done
+
+# -----------------------------------------------------
+# Compare the documents using diffpdf.
+# http://www.qtrac.eu/diffpdf.html
+#[user@desktop]
+
+    diffpdf \
+        "${TEST_PATH:?}/results/REC-VOSpace-2.1.pdf" \
+        "${TEST_PATH:?}/results/VOSpace-${podname:?}.pdf"
+
+    # One line in the table of contents.
+    # Export as ${TEST_PATH:?}/results/VOSpace-${podname:?}-diff.png
+
+
+# -----------------------------------------------------
+# Compare the documents using pdf-diff.
+# https://github.com/JoshData/pdf-diff
+#[user@desktop]
+
+    pdf-diff \
+        "${TEST_PATH:?}/results/REC-VOSpace-2.1.pdf" \
+        "${TEST_PATH:?}/results/VOSpace-${podname:?}.pdf" \
+      > "${TEST_PATH:?}/results/VOSpace-${podname:?}-diff.png"
+
+
+
+
