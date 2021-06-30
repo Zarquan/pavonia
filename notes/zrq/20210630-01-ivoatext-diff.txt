@@ -1,0 +1,267 @@
+#
+# <meta:header>
+#   <meta:licence>
+#     Copyright (c) 2021, ROE (http://www.roe.ac.uk/)
+#
+#     This information is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This information is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#   </meta:licence>
+# </meta:header>
+#
+#zrq-notes-time
+#zrq-notes-indent
+#zrq-notes-crypto
+#zrq-notes-ansible
+#zrq-notes-osformat
+#zrq-notes-zeppelin
+#
+
+    Target:
+
+        Update the ivoatex Dockerfile to use Ubuntu-21.10.
+        Push ivoatex container image to DockerHub.
+        Build VOSpace document using ivoatex container.
+        Push VOSpace document to GitHub tag.
+        -- close the issue --
+
+
+# -----------------------------------------------------
+# Edit the Dockerfile to use a static base reference.
+#[user@desktop]
+
+    source "${HOME}/ivoatex.env"
+    pushd "${IVOATEX_CODE:?}"
+
+        gedit docker/Dockerfile &
+
+        git diff docker/Dockerfile
+
+    popd
+
+    -   ARG osversion
+    -   FROM ${osversion}
+    +   FROM docker.io/library/ubuntu:21.10
+
+
+# -----------------------------------------------------
+# Push changews to our fork on GitHub.
+#[user@desktop]
+
+    source "${HOME}/ivoatex.env"
+    pushd "${IVOATEX_CODE:?}"
+
+        git add docker/Dockerfile
+        git add README.md
+
+        git commit -m "Updated Dockerfile to use ubuntu:21.10" docker/Dockerfile
+        git commit -m "Updated README to recommend Podman" README.md
+
+        git push
+
+    popd
+
+    >   ....
+    >   ....
+
+
+# -----------------------------------------------------
+# Build our container image using Podman.
+# https://podman.io/
+#[user@desktop]
+
+    source "${HOME}/ivoatex.env"
+
+    osversion=ubuntu:21.10
+    imagebase=ivoa/ivoatex
+    imagename=${imagebase:?}:${osversion//[:]/-}
+
+    builddate=$(date '+%Y.%m.%d')
+    buildtime=$(date '+%Y-%m-%dT%H:%M:%S')
+
+    podman build \
+        --build-arg "builddate=${builddate:?}" \
+        --build-arg "buildtime=${buildtime:?}" \
+        --tag "${imagename:?}" \
+        "${IVOATEX_CODE:?}/docker"
+
+    >   ....
+    >   ....
+    >   STEP 13: COMMIT ivoa/ivoatex:ubuntu-21.10
+    >   --> f7b8833563e
+    >   f7b8833563eb305ac5cc5355d93054a9e9040045623a11a0adcfa040516a2c4d
+
+
+# -----------------------------------------------------
+# Push our container image to DockerHub.
+#[user@desktop]
+
+    podman login \
+        --username $(secret docker.io.user) \
+        --password $(secret docker.io.pass) \
+        registry-1.docker.io
+
+    >   Login Succeeded!
+
+
+    podman push \
+        "${imagename:?}"
+
+    podman push \
+        "${imagebase:?}:latest"
+
+
+    >   ....
+    >   ....
+
+
+
+# -----------------------------------------------------
+# Create our document directory and checkout a local clone.
+#[user@desktop]
+
+    TEST_PATH=/tmp/vospace-diff
+
+    mkdir "${TEST_PATH:?}"
+    pushd "${TEST_PATH:?}"
+
+        git clone --recurse-submodules git@github.com:ivoa-std/VOSpace.git
+
+    popd
+
+    >   Cloning into 'VOSpace'...
+    >   ....
+    >   ....
+    >   Receiving objects: 100% (1121/1121), 1.53 MiB | 1.43 MiB/s, done.
+    >   Resolving deltas: 100% (719/719), done.
+    >   Submodule path 'ivoatex': checked out 'a76963ebc836a5976d374d85c3f3af90aa2d2783'
+
+
+# -----------------------------------------------------
+# Create our results directory.
+#[user@desktop]
+
+    mkdir "${TEST_PATH:?}/results"
+
+
+
+# -----------------------------------------------------
+# Checkout the V2.1 REC tag.
+# Not required - there haven't been any changes to the tex document since the REC version.
+#[user@desktop]
+#
+#    pushd "${TEST_PATH:?}/VOSpace"
+#
+#        git checkout 'v2.1'
+#
+#    popd
+#
+
+# -----------------------------------------------------
+# Move the ivoatex module to the version before the V2.1 REC was created.
+#[user@desktop]
+
+    pushd "${TEST_PATH:?}/VOSpace"
+        pushd ivoatex
+
+            git checkout $(
+                git rev-list \
+                    -n 1 \
+                    --first-parent \
+                    --before="2018-06-20" \
+                    master
+                )
+
+        popd
+    popd
+
+    >   Previous HEAD position was a76963e Merge pull request #51 from pdowler/archdiag-content
+    >   HEAD is now at 7beab2f ivoatexDoc: ivoagroup comment now points to ivoatexDoc.
+
+
+# -----------------------------------------------------
+# Build the document using our ivoatex container.
+#[user@desktop]
+
+    podname=${osversion//[:]/-}
+    podname=${podname//[.]/}
+
+cat << EOF
+OS version [${osversion:?}]
+Image name [${imagename:?}]
+Pod name   [${podname:?}]
+EOF
+
+    >   OS version [ubuntu:21.10]
+    >   Image name [ivoa/ivoatex:ubuntu-21.10]
+    >   Pod name   [ubuntu-2110]
+
+
+    podman run \
+        --rm \
+        --tty \
+        --interactive \
+        --name "${podname:?}" \
+        --hostname "${podname:?}" \
+        --volume "${TEST_PATH:?}/VOSpace:/document:rw,Z" \
+        --volume "${TEST_PATH:?}/results:/results:rw,Z" \
+        "${imagename:?}" \
+        bash -c \
+            '
+            pushd /document
+                make clean
+                make biblio
+                make forcetex
+                mv VOSpace.pdf /results/VOSpace-$(hostname -s).pdf
+            popd
+            '
+
+    >   ....
+    >   ....
+    >   Output written on VOSpace.pdf (103 pages, 1018138 bytes).
+    >   Transcript written on VOSpace.log.
+
+
+# -----------------------------------------------------
+# Download the official REC version.
+#[user@desktop]
+
+    wget \
+        -O "${TEST_PATH:?}/results/REC-VOSpace-2.1.pdf" \
+        'https://ivoa.net/documents/VOSpace/20180620/REC-VOSpace-2.1.pdf'
+
+
+# -----------------------------------------------------
+# Compare the documents using diffpdf.
+# http://www.qtrac.eu/diffpdf.html
+#[user@desktop]
+
+    diffpdf \
+        "${TEST_PATH:?}/results/REC-VOSpace-2.1.pdf" \
+        "${TEST_PATH:?}/results/VOSpace-${podname:?}.pdf"
+
+    # One line in the table of contents.
+    # Export as ${TEST_PATH:?}/results/VOSpace-${podname:?}-diff.png
+
+
+# -----------------------------------------------------
+# Compare the documents using pdf-diff.
+# https://github.com/JoshData/pdf-diff
+#[user@desktop]
+
+    pdf-diff \
+        "${TEST_PATH:?}/results/REC-VOSpace-2.1.pdf" \
+        "${TEST_PATH:?}/results/VOSpace-${podname:?}.pdf" \
+      > "${TEST_PATH:?}/results/VOSpace-${podname:?}-diff.png"
+
+
+
